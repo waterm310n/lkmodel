@@ -76,3 +76,8 @@ pub use self::platform::platform_init;
 
 #[cfg(feature = "smp")]
 pub use self::platform::platform_init_secondary;
+
+pub fn arch_init_early(cpu_id: usize) {
+    crate::cpu::init_primary(cpu_id);
+    crate::arch::early_init();
+}

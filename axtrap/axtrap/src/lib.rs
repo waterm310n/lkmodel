@@ -8,6 +8,6 @@ mod arch;
 pub mod irq;
 mod platform;
 
-pub fn init_trap() {
+pub fn init() {
     arch::init_trap();
 }

@@ -37,9 +37,16 @@ d88P     888 888      "Y8888P  "Y8888   "Y88888P"   "Y8888P"
 /// The main entry point for monolithic kernel startup.
 #[cfg_attr(not(test), no_mangle)]
 pub extern "Rust" fn runtime_main(cpu_id: usize, dtb: usize) {
-    axhal::cpu::init_primary(cpu_id);
-    axhal::arch::early_init();
-    axtrap::init_trap();
+    init(cpu_id, dtb);
+    run(cpu_id, dtb);
+    panic!("Never reach here!");
+}
+
+pub fn init(cpu_id: usize, dtb: usize) {
+    axhal::arch_init_early(cpu_id);
+
+    axtrap::init();
+
     init_allocator();
 
     ax_println!("{}", LOGO);
@@ -109,10 +116,10 @@ pub extern "Rust" fn runtime_main(cpu_id: usize, dtb: usize) {
     while !is_init_ok() {
         core::hint::spin_loop();
     }
+}
 
+pub fn run(_cpu_id: usize, dtb: usize) {
     start_kernel(dtb).expect("Fatal error!");
-
-    panic!("Never reach here!");
 }
 
 pub fn init_allocator() {
