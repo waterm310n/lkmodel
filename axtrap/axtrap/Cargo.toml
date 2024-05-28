@@ -1,0 +1,31 @@
+[package]
+name = "axtrap"
+version = "0.1.0"
+edition = "2021"
+
+# See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
+
+[features]
+irq = ["axhal/irq"]
+default = ["irq"]
+
+[dependencies]
+log = "0.4"
+cfg-if = "1.0"
+axhal = { git = "ssh://git@github.com/shilei-massclouds/axhal.git" }
+axsyscall = { git = "ssh://git@github.com/shilei-massclouds/axsyscall.git" }
+signal = { git = "ssh://git@github.com/shilei-massclouds/signal.git" }
+mmap = { git = "ssh://git@github.com/shilei-massclouds/mmap.git" }
+preempt_guard = { git = "ssh://git@github.com/shilei-massclouds/preempt_guard.git" }
+handler_table = { git = "ssh://git@github.com/shilei-massclouds/handler_table.git" }
+lazy_init = { git = "ssh://git@github.com/shilei-massclouds/lazy_init.git" }
+
+[target.'cfg(any(target_arch = "riscv32", target_arch = "riscv64"))'.dependencies]
+riscv = "0.10"
+
+[target.'cfg(target_arch = "x86_64")'.dependencies]
+x86 = "0.52"
+x86_64 = "0.14"
+
+[build-dependencies]
+axconfig = { git = "ssh://git@github.com/shilei-massclouds/axconfig.git" }
