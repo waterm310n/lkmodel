@@ -11,7 +11,6 @@ use axhal::mem::{memory_regions, phys_to_virt};
 use axtype::DtbInfo;
 use core::sync::atomic::{AtomicUsize, Ordering};
 use fork::{user_mode_thread, CloneFlags};
-use preempt_guard::NoPreempt;
 use core::panic::PanicInfo;
 
 #[cfg(feature = "smp")]
@@ -80,18 +79,15 @@ pub fn init(cpu_id: usize, dtb: usize) {
     let idle = task::init();
     run_queue::init(idle);
 
-    {
-        let all_devices = axdriver::init_drivers();
-        let main_fs = axmount::init_filesystems(all_devices.block, false);
-        let root_dir = axmount::init_rootfs(main_fs);
-        task::current().fs.lock().init(root_dir);
-    }
+    let all_devices = axdriver::init_drivers();
+    let root_dir = axmount::init(all_devices.block);
+    task::current().fs.lock().init(root_dir);
 
-    #[cfg(feature = "smp")]
-    self::mp::start_secondary_cpus(cpu_id);
+    //self::mp::start_secondary_cpus(cpu_id);
 
+    // Todo: extract irq as standalone modular axirq.
     info!("Initialize interrupt handlers...");
-    init_interrupt();
+    axtrap::init_irq();
 
     axsyscall::init();
 
@@ -180,38 +176,6 @@ fn parse_cmdline(cmd: &str, dtb_info: &mut DtbInfo) {
         let cmd = cmd.strip_prefix("init=").unwrap();
         dtb_info.set_init_cmd(cmd);
     }
-}
-
-
-fn init_interrupt() {
-    use axhal::time::TIMER_IRQ_NUM;
-
-    // Setup timer interrupt handler
-    const PERIODIC_INTERVAL_NANOS: u64 =
-        axhal::time::NANOS_PER_SEC / axconfig::TICKS_PER_SEC as u64;
-
-    #[percpu2::def_percpu]
-    static NEXT_DEADLINE: u64 = 0;
-
-    fn update_timer() {
-        let now_ns = axhal::time::current_time_nanos();
-        // Safety: we have disabled preemption in IRQ handler.
-        let mut deadline = unsafe { NEXT_DEADLINE.read_current_raw() };
-        if now_ns >= deadline {
-            deadline = now_ns + PERIODIC_INTERVAL_NANOS;
-        }
-        unsafe { NEXT_DEADLINE.write_current_raw(deadline + PERIODIC_INTERVAL_NANOS) };
-        axhal::time::set_oneshot_timer(deadline);
-    }
-
-    axtrap::irq::register_handler(TIMER_IRQ_NUM, || {
-        update_timer();
-        let _ = NoPreempt::new();
-        run_queue::on_timer_tick();
-    });
-
-    // Enable IRQs before starting app
-    axhal::arch::enable_irqs();
 }
 
 fn rest_init(dtb_info: DtbInfo) {

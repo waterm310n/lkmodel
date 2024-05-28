@@ -76,3 +76,8 @@ pub fn init_rootfs(main_fs: Arc<dyn VfsOps>) -> Arc<RootDirectory> {
 
     Arc::new(root_dir)
 }
+
+pub fn init(blk_devs: AxDeviceContainer<AxBlockDevice>) -> Arc<RootDirectory> {
+    let main_fs = init_filesystems(blk_devs, false);
+    init_rootfs(main_fs)
+}
