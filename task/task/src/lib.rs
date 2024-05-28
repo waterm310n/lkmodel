@@ -268,7 +268,7 @@ pub fn yield_now() {
     unimplemented!("yield_now");
 }
 
-pub fn init() -> Arc<SchedInfo> {
+pub fn init() {
     error!("task::init ...");
     let init_task = TaskStruct::new();
     init_task.set_state(TaskState::Running);
@@ -277,5 +277,5 @@ pub fn init() -> Arc<SchedInfo> {
     assert_eq!(tid, 0);
     register_task(init_task.clone());
     unsafe { CurrentTask::init_current(init_task.clone()) }
-    init_task.sched_info.clone()
+    run_queue::init(init_task.sched_info.clone());
 }

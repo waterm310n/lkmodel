@@ -76,8 +76,8 @@ pub fn init(cpu_id: usize, dtb: usize) {
     info!("Initialize platform devices...");
     axhal::platform_init();
 
-    let idle = task::init();
-    run_queue::init(idle);
+    info!("Initialize schedule system ...");
+    task::init();
 
     let all_devices = axdriver::init_drivers();
     let root_dir = axmount::init(all_devices.block);
