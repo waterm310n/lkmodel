@@ -12,17 +12,3 @@ Cargo.lock
 
 # MSVC Windows builds of rustc generate these, which store debugging information
 *.pdb
-
-disk.img
-*.log
-*.swp
-.root
-.default_arch
-btp
-
-*.lds
-*.bin
-*.elf
-
-proj/src/main.rs
-proj/Cargo.toml

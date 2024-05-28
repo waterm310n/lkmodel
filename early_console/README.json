@@ -1,0 +1,10 @@
+{
+  "name": "early_console",
+  "description": "Boot early-stage console.",
+  "authors": [{
+    "name": "Yuekai Jia",
+    "email": "equation618@gmail.com"
+  }],
+  "keywords": ["console", "boot"],
+  "repo": "shilei-massclouds/early_console"
+}

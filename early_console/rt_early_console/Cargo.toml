@@ -1,0 +1,11 @@
+[package]
+name = "rt_early_console"
+version = "0.1.0"
+edition = "2021"
+
+# See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
+
+[dependencies]
+arch_boot = { git = "ssh://git@github.com/shilei-massclouds/arch_boot.git" }
+early_console = { git = "ssh://git@github.com/shilei-massclouds/early_console.git" }
+axhal = { git = "ssh://git@github.com/shilei-massclouds/axhal.git" }

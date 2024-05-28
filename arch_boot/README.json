@@ -1,0 +1,10 @@
+{
+  "name": "arch_boot",
+  "description": "Multi-arch boot component.",
+  "authors": [{
+    "name": "Yuekai Jia",
+    "email": "equation618@gmail.com"
+  }],
+  "keywords": ["hal", "arch", "platform"],
+  "repo": "shilei-massclouds/arch_boot"
+}

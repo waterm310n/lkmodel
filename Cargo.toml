@@ -1,0 +1,24 @@
+[workspace]
+resolver = "2"
+members = ["proj"]
+
+[profile.release]
+lto = true
+
+[patch."ssh://git@github.com/shilei-massclouds/arch_boot"]
+arch_boot = { path = "./arch_boot/arch_boot" }
+
+[patch."ssh://git@github.com/shilei-massclouds/axconfig"]
+axconfig = { path = "./axconfig/axconfig" }
+
+[patch."ssh://git@github.com/shilei-massclouds/axhal"]
+axhal = { path = "./axhal/axhal" }
+
+[patch."ssh://git@github.com/shilei-massclouds/early_console"]
+early_console = { path = "./early_console/early_console" }
+
+[patch."ssh://git@github.com/shilei-massclouds/fork"]
+fork = { path = "./fork/fork" }
+
+[patch."ssh://git@github.com/shilei-massclouds/macrokernel"]
+rt_macrokernel = { path = "./macrokernel/rt_macrokernel" }
