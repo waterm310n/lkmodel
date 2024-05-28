@@ -1,0 +1,12 @@
+[package]
+name = "taskctx"
+version = "0.1.0"
+edition = "2021"
+
+# See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
+
+[dependencies]
+log = "0.4"
+axhal = { git = "ssh://git@github.com/shilei-massclouds/axhal.git" }
+spinbase = { git = "ssh://git@github.com/shilei-massclouds/spinbase.git" }
+memory_addr = { git = "ssh://git@github.com/shilei-massclouds/memory_addr.git" }
