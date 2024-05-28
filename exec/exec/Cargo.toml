@@ -1,0 +1,19 @@
+[package]
+name = "exec"
+version = "0.1.0"
+edition = "2021"
+
+# See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
+
+[dependencies]
+log = "0.4"
+mmap = { git = "ssh://git@github.com/shilei-massclouds/mmap.git" }
+task = { git = "ssh://git@github.com/shilei-massclouds/task.git" }
+axhal = { git = "ssh://git@github.com/shilei-massclouds/axhal.git" }
+axfile = { git = "ssh://git@github.com/shilei-massclouds/axfile.git" }
+mutex = { git = "ssh://git@github.com/shilei-massclouds/mutex.git" }
+axerrno = { git = "ssh://git@github.com/shilei-massclouds/axerrno.git" }
+axtype = { git = "ssh://git@github.com/shilei-massclouds/axtype.git" }
+elf = { git = "ssh://git@github.com/shilei-massclouds/elf.git" }
+axio = { git = "ssh://git@github.com/shilei-massclouds/axio.git" }
+preempt_guard = { git = "ssh://git@github.com/shilei-massclouds/preempt_guard.git" }

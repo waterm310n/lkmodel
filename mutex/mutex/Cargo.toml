@@ -1,0 +1,11 @@
+[package]
+name = "mutex"
+version = "0.1.0"
+edition = "2021"
+authors = ["Yuekai Jia <equation618@gmail.com>"]
+description = "ArceOS synchronization primitives"
+license = "GPL-3.0-or-later OR Apache-2.0"
+
+[dependencies]
+taskctx = { git = "ssh://git@github.com/shilei-massclouds/taskctx.git" }
+wait_queue = { git = "ssh://git@github.com/shilei-massclouds/wait_queue.git" }

@@ -1,0 +1,15 @@
+[package]
+name = "mm"
+version = "0.1.0"
+edition = "2021"
+
+# See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
+
+[dependencies]
+log = "0.4"
+axhal = { git = "ssh://git@github.com/shilei-massclouds/axhal.git" }
+axfile = { git = "ssh://git@github.com/shilei-massclouds/axfile.git" }
+axalloc = { git = "ssh://git@github.com/shilei-massclouds/axalloc.git" }
+mutex = { git = "ssh://git@github.com/shilei-massclouds/mutex.git" }
+spinbase = { git = "ssh://git@github.com/shilei-massclouds/spinbase.git" }
+axtype = { git = "ssh://git@github.com/shilei-massclouds/axtype.git" }

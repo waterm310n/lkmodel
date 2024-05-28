@@ -1,0 +1,19 @@
+[package]
+name = "run_queue"
+version = "0.1.0"
+edition = "2021"
+
+# See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
+
+[features]
+default = ["sched_cfs", "preempt"]
+
+sched_cfs = []
+preempt = []
+
+[dependencies]
+log = "0.4"
+spinbase = { git = "ssh://git@github.com/shilei-massclouds/spinbase.git" }
+taskctx = { git = "ssh://git@github.com/shilei-massclouds/taskctx.git" }
+lazy_init = { git = "ssh://git@github.com/shilei-massclouds/lazy_init.git" }
+scheduler = { git = "ssh://git@github.com/shilei-massclouds/scheduler.git" }

@@ -1,0 +1,19 @@
+[package]
+name = "axsyscall"
+version = "0.1.0"
+edition = "2021"
+
+# See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
+
+[dependencies]
+log = "0.4"
+axhal = { git = "ssh://git@github.com/shilei-massclouds/axhal.git" }
+signal = { git = "ssh://git@github.com/shilei-massclouds/signal.git" }
+task = { git = "ssh://git@github.com/shilei-massclouds/task.git" }
+fork = { git = "ssh://git@github.com/shilei-massclouds/fork.git" }
+exec = { git = "ssh://git@github.com/shilei-massclouds/exec.git" }
+sys = { git = "ssh://git@github.com/shilei-massclouds/sys.git" }
+mmap = { git = "ssh://git@github.com/shilei-massclouds/mmap.git" }
+fileops = { git = "ssh://git@github.com/shilei-massclouds/fileops.git" }
+axtype = { git = "ssh://git@github.com/shilei-massclouds/axtype.git" }
+axerrno = { git = "ssh://git@github.com/shilei-massclouds/axerrno.git" }

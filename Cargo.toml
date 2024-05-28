@@ -99,3 +99,66 @@ path = "./axfs_devfs/axfs_devfs"
 
 [patch."ssh://git@github.com/shilei-massclouds/axfs_ramfs".axfs_ramfs]
 path = "./axfs_ramfs/axfs_ramfs"
+
+[patch."ssh://git@github.com/shilei-massclouds/rust_fatfs".rust_fatfs]
+path = "./rust_fatfs/rust_fatfs"
+
+[patch."ssh://git@github.com/shilei-massclouds/axfs_vfs".axfs_vfs]
+path = "./axfs_vfs/axfs_vfs"
+
+[patch."ssh://git@github.com/shilei-massclouds/axmount".axmount]
+path = "./axmount/axmount"
+
+[patch."ssh://git@github.com/shilei-massclouds/driver_pci".driver_pci]
+path = "./driver_pci/driver_pci"
+
+[patch."ssh://git@github.com/shilei-massclouds/driver_virtio".driver_virtio]
+path = "./driver_virtio/driver_virtio"
+
+[patch."ssh://git@github.com/shilei-massclouds/axsyscall".axsyscall]
+path = "./axsyscall/axsyscall"
+
+[patch."ssh://git@github.com/shilei-massclouds/exec".exec]
+path = "./exec/exec"
+
+[patch."ssh://git@github.com/shilei-massclouds/mmap".mmap]
+path = "./mmap/mmap"
+
+[patch."ssh://git@github.com/shilei-massclouds/sys".sys]
+path = "./sys/sys"
+
+[patch."ssh://git@github.com/shilei-massclouds/task".task]
+path = "./task/task"
+
+[patch."ssh://git@github.com/shilei-massclouds/filetable".filetable]
+path = "./filetable/filetable"
+
+[patch."ssh://git@github.com/shilei-massclouds/fileops".fileops]
+path = "./fileops/fileops"
+
+[patch."ssh://git@github.com/shilei-massclouds/mm".mm]
+path = "./mm/mm"
+
+[patch."ssh://git@github.com/shilei-massclouds/axfile".axfile]
+path = "./axfile/axfile"
+
+[patch."ssh://git@github.com/shilei-massclouds/fstree".fstree]
+path = "./fstree/fstree"
+
+[patch."ssh://git@github.com/shilei-massclouds/spinpreempt".spinpreempt]
+path = "./spinpreempt/spinpreempt"
+
+[patch."ssh://git@github.com/shilei-massclouds/mutex".mutex]
+path = "./mutex/mutex"
+
+[patch."ssh://git@github.com/shilei-massclouds/signal".signal]
+path = "./signal/signal"
+
+[patch."ssh://git@github.com/shilei-massclouds/wait_queue".wait_queue]
+path = "./wait_queue/wait_queue"
+
+[patch."ssh://git@github.com/shilei-massclouds/run_queue".run_queue]
+path = "./run_queue/run_queue"
+
+[patch."ssh://git@github.com/shilei-massclouds/preempt_guard".preempt_guard]
+path = "./preempt_guard/preempt_guard"

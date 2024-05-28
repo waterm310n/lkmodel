@@ -1,0 +1,18 @@
+[package]
+name = "mmap"
+version = "0.1.0"
+edition = "2021"
+
+# See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
+
+[dependencies]
+log = "0.4"
+axhal = { git = "ssh://git@github.com/shilei-massclouds/axhal.git" }
+axfile = { git = "ssh://git@github.com/shilei-massclouds/axfile.git" }
+task = { git = "ssh://git@github.com/shilei-massclouds/task.git" }
+signal = { git = "ssh://git@github.com/shilei-massclouds/signal.git" }
+mm = { git = "ssh://git@github.com/shilei-massclouds/mm.git" }
+axerrno = { git = "ssh://git@github.com/shilei-massclouds/axerrno.git" }
+axio = { git = "ssh://git@github.com/shilei-massclouds/axio.git" }
+memory_addr = { git = "ssh://git@github.com/shilei-massclouds/memory_addr.git" }
+axalloc = { git = "ssh://git@github.com/shilei-massclouds/axalloc.git" }

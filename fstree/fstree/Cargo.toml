@@ -1,0 +1,12 @@
+[package]
+name = "fstree"
+version = "0.1.0"
+edition = "2021"
+
+# See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
+
+[dependencies]
+log = "0.4"
+axfs_vfs = { git = "ssh://git@github.com/shilei-massclouds/axfs_vfs.git" }
+axerrno = { git = "ssh://git@github.com/shilei-massclouds/axerrno.git" }
+spinpreempt = { git = "ssh://git@github.com/shilei-massclouds/spinpreempt.git" }

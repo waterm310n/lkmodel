@@ -1,0 +1,20 @@
+[package]
+name = "fileops"
+version = "0.1.0"
+edition = "2021"
+
+# See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
+
+[dependencies]
+log = "0.4"
+task = { git = "ssh://git@github.com/shilei-massclouds/task.git" }
+axfile = { git = "ssh://git@github.com/shilei-massclouds/axfile.git" }
+mutex = { git = "ssh://git@github.com/shilei-massclouds/mutex.git" }
+axerrno = { git = "ssh://git@github.com/shilei-massclouds/axerrno.git" }
+axio = { git = "ssh://git@github.com/shilei-massclouds/axio.git" }
+axtype = { git = "ssh://git@github.com/shilei-massclouds/axtype.git" }
+axhal = { git = "ssh://git@github.com/shilei-massclouds/axhal.git" }
+early_console = { git = "ssh://git@github.com/shilei-massclouds/early_console.git" }
+
+[target.'cfg(any(target_arch = "riscv32", target_arch = "riscv64"))'.dependencies]
+riscv = "0.10"
