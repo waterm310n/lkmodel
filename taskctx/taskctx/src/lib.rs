@@ -18,7 +18,7 @@ use axhal::trap::{TRAPFRAME_SIZE, STACK_ALIGN};
 use memory_addr::{align_up_4k, align_down, PAGE_SIZE_4K};
 use spinbase::SpinNoIrq;
 use axhal::arch::write_page_table_root0;
-use axhal::paging::PageTable;
+use page_table::paging::PageTable;
 
 pub const THREAD_SIZE: usize = 32 * PAGE_SIZE_4K;
 

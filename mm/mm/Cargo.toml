@@ -13,3 +13,4 @@ axalloc = { git = "ssh://git@github.com/shilei-massclouds/axalloc.git" }
 mutex = { git = "ssh://git@github.com/shilei-massclouds/mutex.git" }
 spinbase = { git = "ssh://git@github.com/shilei-massclouds/spinbase.git" }
 axtype = { git = "ssh://git@github.com/shilei-massclouds/axtype.git" }
+page_table = { git = "ssh://git@github.com/shilei-massclouds/page_table" }

@@ -17,6 +17,7 @@ use allocator::{AllocResult, BaseAllocator, BitmapPageAllocator, ByteAllocator, 
 use core::alloc::{GlobalAlloc, Layout};
 use core::ptr::NonNull;
 use spinbase::SpinNoIrq;
+use axhal::mem::{MemRegionFlags, memory_regions, phys_to_virt};
 
 const PAGE_SIZE: usize = 0x1000;
 const MIN_HEAP_SIZE: usize = 0x8000; // 32 K
@@ -230,4 +231,30 @@ pub fn global_add_memory(start_vaddr: usize, size: usize) -> AllocResult {
         start_vaddr + size
     );
     GLOBAL_ALLOCATOR.add_memory(start_vaddr, size)
+}
+
+pub fn init() {
+    info!("Initialize global memory allocator...");
+    info!("  use {} allocator.", global_allocator().name());
+
+    let mut max_region_size = 0;
+    let mut max_region_paddr = 0.into();
+    for r in memory_regions() {
+        if r.flags.contains(MemRegionFlags::FREE) && r.size > max_region_size {
+            max_region_size = r.size;
+            max_region_paddr = r.paddr;
+        }
+    }
+    for r in memory_regions() {
+        if r.flags.contains(MemRegionFlags::FREE) && r.paddr == max_region_paddr {
+            global_init(phys_to_virt(r.paddr).as_usize(), r.size);
+            break;
+        }
+    }
+    for r in memory_regions() {
+        if r.flags.contains(MemRegionFlags::FREE) && r.paddr != max_region_paddr {
+            global_add_memory(phys_to_virt(r.paddr).as_usize(), r.size)
+                .expect("add heap memory region failed");
+        }
+    }
 }

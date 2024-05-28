@@ -47,7 +47,7 @@ pub fn init(cpu_id: usize, dtb: usize) {
 
     axtrap::init();
 
-    init_allocator();
+    axalloc::init();
 
     ax_println!("{}", LOGO);
     ax_println!(
@@ -122,34 +122,6 @@ pub fn run(_cpu_id: usize, dtb: usize) {
     start_kernel(dtb).expect("Fatal error!");
 }
 
-pub fn init_allocator() {
-    use axhal::mem::{MemRegionFlags};
-
-    //log::info!("Initialize global memory allocator...");
-    //log::info!("  use {} allocator.", axalloc::global_allocator().name());
-
-    let mut max_region_size = 0;
-    let mut max_region_paddr = 0.into();
-    for r in memory_regions() {
-        if r.flags.contains(MemRegionFlags::FREE) && r.size > max_region_size {
-            max_region_size = r.size;
-            max_region_paddr = r.paddr;
-        }
-    }
-    for r in memory_regions() {
-        if r.flags.contains(MemRegionFlags::FREE) && r.paddr == max_region_paddr {
-            axalloc::global_init(phys_to_virt(r.paddr).as_usize(), r.size);
-            break;
-        }
-    }
-    for r in memory_regions() {
-        if r.flags.contains(MemRegionFlags::FREE) && r.paddr != max_region_paddr {
-            axalloc::global_add_memory(phys_to_virt(r.paddr).as_usize(), r.size)
-                .expect("add heap memory region failed");
-        }
-    }
-}
-
 fn start_kernel(dtb: usize) -> LinuxResult {
     let dtb_info = setup_arch(dtb)?;
     rest_init(dtb_info);
@@ -205,9 +177,9 @@ fn parse_cmdline(cmd: &str, dtb_info: &mut DtbInfo) {
     }
 }
 
-fn remap_kernel_memory() -> Result<(), axhal::paging::PagingError> {
-    use axhal::paging::PageTable;
-    use axhal::paging::{reuse_page_table_root, setup_page_table_root};
+fn remap_kernel_memory() -> Result<(), page_table::paging::PagingError> {
+    use page_table::paging::PageTable;
+    use page_table::paging::{reuse_page_table_root, setup_page_table_root};
 
     if this_cpu_is_bsp() {
         let mut kernel_page_table = PageTable::try_new()?;

@@ -26,6 +26,7 @@ extern crate log;
 
 mod arch;
 mod bits64;
+pub mod paging;
 
 use memory_addr::{PhysAddr, VirtAddr};
 
