@@ -5,7 +5,7 @@ use core::cell::OnceCell;
 use crate::PagingIf;
 
 use axhal::arch::write_page_table_root;
-use axhal::mem::{phys_to_virt, virt_to_phys, MemRegionFlags, PhysAddr, VirtAddr, PAGE_SIZE_4K};
+use axhal::mem::{phys_to_virt, virt_to_phys, PhysAddr, VirtAddr, PAGE_SIZE_4K};
 
 #[doc(no_inline)]
 pub use crate::{MappingFlags, PageSize, PagingError, PagingResult};

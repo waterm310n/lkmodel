@@ -43,29 +43,7 @@ pub extern "Rust" fn runtime_main(cpu_id: usize, dtb: usize) {
 }
 
 pub fn init(cpu_id: usize, dtb: usize) {
-    axhal::arch_init_early(cpu_id);
-
-    axtrap::init();
-
-    axalloc::init();
-
-    ax_println!("{}", LOGO);
-    ax_println!(
-        "\
-        arch = {}\n\
-        platform = {}\n\
-        target = {}\n\
-        smp = {}\n\
-        build_mode = {}\n\
-        log_level = {}\n\
-        ",
-        option_env!("AX_ARCH").unwrap_or(""),
-        option_env!("AX_PLATFORM").unwrap_or(""),
-        option_env!("AX_TARGET").unwrap_or(""),
-        option_env!("AX_SMP").unwrap_or(""),
-        option_env!("AX_MODE").unwrap_or(""),
-        option_env!("AX_LOG").unwrap_or(""),
-    );
+    show_logo();
 
     axlog2::init();
     axlog2::set_max_level(option_env!("AX_LOG").unwrap_or("")); // no effect if set `log-level-*` features
@@ -75,8 +53,12 @@ pub fn init(cpu_id: usize, dtb: usize) {
         cpu_id, dtb
     );
 
+    axhal::arch_init_early(cpu_id);
+
+    axtrap::init();
+
     info!("Found physcial memory regions:");
-    for r in axhal::mem::memory_regions() {
+    for r in memory_regions() {
         info!(
             "  [{:x?}, {:x?}) {} ({:?})",
             r.paddr,
@@ -86,8 +68,11 @@ pub fn init(cpu_id: usize, dtb: usize) {
         );
     }
 
+    info!("Initialize global memory allocator...");
+    axalloc::init();
+
     info!("Initialize kernel page table...");
-    remap_kernel_memory().expect("remap kernel memoy failed");
+    page_table::init();
 
     info!("Initialize platform devices...");
     axhal::platform_init();
@@ -116,6 +101,26 @@ pub fn init(cpu_id: usize, dtb: usize) {
     while !is_init_ok() {
         core::hint::spin_loop();
     }
+}
+
+fn show_logo() {
+    ax_println!("{}", LOGO);
+    ax_println!(
+        "\
+        arch = {}\n\
+        platform = {}\n\
+        target = {}\n\
+        smp = {}\n\
+        build_mode = {}\n\
+        log_level = {}\n\
+        ",
+        option_env!("AX_ARCH").unwrap_or(""),
+        option_env!("AX_PLATFORM").unwrap_or(""),
+        option_env!("AX_TARGET").unwrap_or(""),
+        option_env!("AX_SMP").unwrap_or(""),
+        option_env!("AX_MODE").unwrap_or(""),
+        option_env!("AX_LOG").unwrap_or(""),
+    );
 }
 
 pub fn run(_cpu_id: usize, dtb: usize) {
@@ -177,34 +182,6 @@ fn parse_cmdline(cmd: &str, dtb_info: &mut DtbInfo) {
     }
 }
 
-fn remap_kernel_memory() -> Result<(), page_table::paging::PagingError> {
-    use page_table::paging::PageTable;
-    use page_table::paging::{reuse_page_table_root, setup_page_table_root};
-
-    if this_cpu_is_bsp() {
-        let mut kernel_page_table = PageTable::try_new()?;
-        for r in memory_regions() {
-            kernel_page_table.map_region(
-                phys_to_virt(r.paddr),
-                r.paddr,
-                r.size,
-                r.flags.into(),
-                true,
-            )?;
-        }
-        setup_page_table_root(kernel_page_table);
-    } else {
-        reuse_page_table_root();
-    }
-
-    Ok(())
-}
-
-// Todo: Consider to move it to standalone component 'cpu'
-fn this_cpu_is_bsp() -> bool {
-    let _ = NoPreempt::new();
-    axhal::cpu::_this_cpu_is_bsp()
-}
 
 fn init_interrupt() {
     use axhal::time::TIMER_IRQ_NUM;

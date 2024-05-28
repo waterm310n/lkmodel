@@ -18,7 +18,7 @@ mod arch;
 
 use core::fmt::Debug;
 use memory_addr::PhysAddr;
-use axhal::mem::{phys_to_virt, virt_to_phys, MemRegionFlags, VirtAddr, PAGE_SIZE_4K};
+use axhal::mem::MemRegionFlags;
 
 pub use self::arch::*;
 

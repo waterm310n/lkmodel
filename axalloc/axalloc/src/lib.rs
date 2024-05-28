@@ -234,7 +234,6 @@ pub fn global_add_memory(start_vaddr: usize, size: usize) -> AllocResult {
 }
 
 pub fn init() {
-    info!("Initialize global memory allocator...");
     info!("  use {} allocator.", global_allocator().name());
 
     let mut max_region_size = 0;
