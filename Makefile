@@ -50,6 +50,7 @@ NET_DUMP ?= n
 NET_DEV ?= user
 INIT_CMD ?=
 GLOBAL_CFG ?=
+LTP ?= /tmp
 
 # Network options
 IP ?= 10.0.2.15
