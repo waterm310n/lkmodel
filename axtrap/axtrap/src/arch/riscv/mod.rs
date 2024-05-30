@@ -85,7 +85,7 @@ fn syscall<F>(tf: &mut TrapFrame, do_syscall: F)
 where
     F: FnOnce(SyscallArgs, usize) -> usize,
 {
-    error!("Syscall: {:#x}, {}, {:#x}", tf.regs.a7, tf.regs.a7, tf.sepc);
+    warn!("Syscall: {:#x}, {}, {:#x}", tf.regs.a7, tf.regs.a7, tf.sepc);
     let args = syscall_args(tf);
     // Note: "tf.sepc += 4;" must be put before do_syscall. Or:
     // E.g., when we do clone, child task will call clone again

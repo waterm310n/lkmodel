@@ -141,7 +141,7 @@ impl TaskStruct {
 
     // Safety: makesure to be under NoPreempt
     pub fn alloc_mm(&mut self) {
-        error!("alloc_mm...");
+        info!("alloc_mm...");
         //assert!(self.mm.is_none());
         let mm = MmStruct::new();
         let mm_id = mm.id();
@@ -232,13 +232,13 @@ impl CurrentTask {
     }
 
     pub(crate) unsafe fn init_current(init_task: TaskRef) {
-        error!("CurrentTask::init_current...");
+        info!("CurrentTask::init_current...");
         let ptr = Arc::into_raw(init_task.sched_info.clone());
         axhal::cpu::set_current_task_ptr(ptr);
     }
 
     pub unsafe fn set_current(prev: Self, next: TaskRef) {
-        error!("CurrentTask::set_current...");
+        info!("CurrentTask::set_current...");
         let Self(arc) = prev;
         ManuallyDrop::into_inner(arc); // `call Arc::drop()` to decrease prev task reference count.
         let ptr = Arc::into_raw(next.sched_info.clone());
@@ -269,7 +269,7 @@ pub fn yield_now() {
 }
 
 pub fn init() {
-    error!("task::init ...");
+    info!("task::init ...");
     let init_task = TaskStruct::new();
     init_task.set_state(TaskState::Running);
     let init_task = Arc::new(init_task);

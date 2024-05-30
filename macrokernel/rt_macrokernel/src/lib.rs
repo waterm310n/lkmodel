@@ -179,7 +179,7 @@ fn parse_cmdline(cmd: &str, dtb_info: &mut DtbInfo) {
 }
 
 fn rest_init(dtb_info: DtbInfo) {
-    error!("rest_init ...");
+    info!("rest_init ...");
     let tid = user_mode_thread(
         move || {
             kernel_init(dtb_info);
@@ -249,7 +249,7 @@ fn try_to_run_init_process(init_filename: &str) -> LinuxResult {
 }
 
 fn run_init_process(init_filename: &str) -> LinuxResult {
-    error!("run_init_process...");
+    info!("run_init_process...");
     exec::kernel_execve(init_filename)
 }
 

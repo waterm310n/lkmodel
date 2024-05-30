@@ -211,7 +211,7 @@ impl AxRunQueue {
                 );
             }
             None => {
-                error!(
+                info!(
                     "###### {} {};",
                     prev_task.active_mm_id.load(Ordering::SeqCst),
                     next_task.active_mm_id.load(Ordering::SeqCst)

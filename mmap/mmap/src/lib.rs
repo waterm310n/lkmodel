@@ -15,7 +15,7 @@ pub use mm::FileRef;
 use mm::VmAreaStruct;
 use axerrno::LinuxError;
 use axhal::arch::TASK_SIZE;
-use mm::{VM_READ, VM_WRITE, VM_EXEC};
+use mm::{VM_READ, VM_WRITE, VM_EXEC, VM_SHARED};
 #[cfg(target_arch = "riscv64")]
 use axhal::arch::{EXC_INST_PAGE_FAULT, EXC_LOAD_PAGE_FAULT, EXC_STORE_PAGE_FAULT};
 use task::SIGSEGV;
@@ -166,7 +166,10 @@ pub fn _mmap(
         }
     }
 
-    let vm_flags = calc_vm_prot_bits(prot);
+    let mut vm_flags = calc_vm_prot_bits(prot);
+    if (flags & MAP_SHARED) != 0 {
+        vm_flags |= VM_SHARED;
+    }
     info!(
         "mmap region: {:#X} - {:#X}, vm_flags: {:#X}, prot {:#X}",
         va,
@@ -290,6 +293,18 @@ pub fn faultin_page(va: usize, cause: usize) -> usize {
     let delta = va - vma.vm_start;
     let offset = (vma.vm_pgoff << PAGE_SHIFT) + delta;
 
+    if (vma.vm_flags & VM_SHARED) != 0 {
+        assert!(vma.vm_file.get().is_some());
+        let f = vma.vm_file.get().unwrap().clone();
+        let f = f.lock();
+        if let Some(pa) = f.shared_map.get(&offset) {
+            locked_mm.map_region(va, *pa, PAGE_SIZE_4K, 1)
+                .unwrap_or_else(|e| { panic!("{:?}", e) });
+
+            return phys_to_virt((*pa).into()).into();
+        }
+    }
+
     let direct_va: usize = axalloc::global_allocator()
         .alloc_pages(1, PAGE_SIZE_4K)
         .unwrap();
@@ -303,12 +318,17 @@ pub fn faultin_page(va: usize, cause: usize) -> usize {
     if vma.vm_file.get().is_some() {
         let f = vma.vm_file.get().unwrap().clone();
         fill_cache(pa, PAGE_SIZE_4K, &mut f.lock(), offset);
+        if (vma.vm_flags & VM_SHARED) != 0 {
+            f.lock().shared_map.insert(offset, pa);
+        }
     }
     locked_mm.map_region(va, pa, PAGE_SIZE_4K, 1)
         .unwrap_or_else(|e| { panic!("{:?}", e) });
 
-    // Todo: temporarily record mapped va->pa(direct_va)
-    locked_mm.mapped.insert(va, direct_va);
+    if (vma.vm_flags & VM_SHARED) == 0 {
+        // Todo: temporarily record mapped va->pa(direct_va)
+        locked_mm.mapped.insert(va, direct_va);
+    }
 
     phys_to_virt(pa.into()).into()
 }

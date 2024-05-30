@@ -35,7 +35,7 @@ use axtype::is_aligned;
 const ELF_HEAD_BUF_SIZE: usize = 256;
 
 pub fn kernel_execve(filename: &str) -> LinuxResult {
-    error!("kernel_execve... {}", filename);
+    info!("kernel_execve... {}", filename);
 
     let mut task = task::current();
     {
@@ -51,7 +51,7 @@ pub fn kernel_execve(filename: &str) -> LinuxResult {
 
 #[allow(unused)]
 fn setup_zero_page() -> LinuxResult {
-    error!("setup_zero_page ...");
+    info!("setup_zero_page ...");
     mmap::_mmap(0x0, PAGE_SIZE, PROT_READ, MAP_FIXED | MAP_ANONYMOUS, None, 0)?;
     Ok(())
 }
@@ -211,10 +211,10 @@ fn load_elf_interp(
     let mut elf_bss: usize = 0;
     let mut elf_brk: usize = 0;
 
-    error!("interp: args: {:?}", args);
-    error!("There are {} PT_LOAD segments", phdrs.len());
+    info!("interp: args: {:?}", args);
+    info!("There are {} PT_LOAD segments", phdrs.len());
     for phdr in &phdrs {
-        error!(
+        info!(
             "phdr: offset: {:#X}=>{:#X} size: {:#X}=>{:#X}",
             phdr.p_offset, phdr.p_vaddr, phdr.p_filesz, phdr.p_memsz
         );
@@ -246,13 +246,13 @@ fn load_elf_interp(
 
     let sp = get_arg_page(app_entry, args)?;
 
-    error!("set brk...");
+    info!("set brk...");
     set_brk(elf_bss, elf_brk);
 
-    error!("pad bss...");
+    info!("pad bss...");
     padzero(elf_bss);
 
-    error!("start thread...");
+    info!("start thread...");
     start_thread(task::current().pt_regs_addr(), entry, sp);
     Ok(())
 }
@@ -264,7 +264,7 @@ fn load_elf_binary(
 
     for phdr in &phdrs {
         if phdr.p_type == PT_INTERP {
-            error!(
+            info!(
                 "Interp: phdr: offset: {:#X}=>{:#X} size: {:#X}=>{:#X}",
                 phdr.p_offset, phdr.p_vaddr, phdr.p_filesz, phdr.p_memsz
             );
@@ -274,7 +274,7 @@ fn load_elf_binary(
             let path = &path[0..phdr.p_filesz as usize];
             let path = from_utf8(&path).expect("Interpreter path isn't valid UTF-8");
             let path = path.trim_matches(char::from(0));
-            error!("PT_INTERP ret {} {:?}!", ret, path);
+            info!("PT_INTERP ret {} {:?}!", ret, path);
             // Todo: check elf_ex->e_type == ET_DYN
             let load_bias = align_down_4k(ELF_ET_DYN_BASE);
             let file = do_open_execat(path, 0)?;
@@ -286,9 +286,9 @@ fn load_elf_binary(
     let mut elf_bss: usize = 0;
     let mut elf_brk: usize = 0;
 
-    error!("There are {} PT_LOAD segments", phdrs.len());
+    info!("There are {} PT_LOAD segments", phdrs.len());
     for phdr in &phdrs {
-        error!(
+        info!(
             "phdr: offset: {:#X}=>{:#X} size: {:#X}=>{:#X}",
             phdr.p_offset, phdr.p_vaddr, phdr.p_filesz, phdr.p_memsz
         );
@@ -320,23 +320,23 @@ fn load_elf_binary(
 
     let sp = get_arg_page(entry, args)?;
 
-    error!("set brk...");
+    info!("set brk...");
     set_brk(elf_bss, elf_brk);
 
     padzero(elf_bss);
 
-    error!("start thread...");
+    info!("start thread...");
     start_thread(task::current().pt_regs_addr(), entry, sp);
     Ok(())
 }
 
 fn padzero(elf_bss: usize) {
     let nbyte = elf_bss & (PAGE_SIZE - 1);
-    error!("padzero nbyte: {:#X} ...", elf_bss);
+    info!("padzero nbyte: {:#X} ...", elf_bss);
     if nbyte != 0 {
         let nbyte = PAGE_SIZE - nbyte;
         unsafe { core::slice::from_raw_parts_mut(elf_bss as *mut u8, nbyte) }.fill(0);
-        error!("padzero nbyte: {:#X} {:#X}", elf_bss, nbyte);
+        info!("padzero nbyte: {:#X} {:#X}", elf_bss, nbyte);
     }
 }
 
@@ -344,7 +344,7 @@ fn set_brk(elf_bss: usize, elf_brk: usize) {
     let elf_bss = align_up_4k(elf_bss);
     let elf_brk = align_up_4k(elf_brk);
     if elf_bss < elf_brk {
-        error!("{:#X} < {:#X}", elf_bss, elf_brk);
+        info!("{:#X} < {:#X}", elf_bss, elf_brk);
         mmap::_mmap(
             elf_bss,
             elf_brk - elf_bss,
@@ -365,7 +365,7 @@ fn load_elf_phdrs(file: FileRef) -> LinuxResult<(Vec<ProgramHeader>, usize)> {
     file.read(&mut buf)?;
 
     let ehdr = ElfBytes::<AnyEndian>::parse_elf_header(&buf[..]).unwrap();
-    error!("e_entry: {:#X}", ehdr.e_entry);
+    info!("e_entry: {:#X}", ehdr.e_entry);
 
     let phnum = ehdr.e_phnum as usize;
     // Validate phentsize before trying to read the table so that we can error early for corrupted files
@@ -375,7 +375,7 @@ fn load_elf_phdrs(file: FileRef) -> LinuxResult<(Vec<ProgramHeader>, usize)> {
     let phoff = ehdr.e_phoff;
     //let mut buf: [u8; PAGE_SIZE] = [0; PAGE_SIZE];
     let mut buf: [u8; 2 * 1024] = [0; 2 * 1024];
-    error!("phoff: {:#X}", ehdr.e_phoff);
+    info!("phoff: {:#X}", ehdr.e_phoff);
     let _ = file.seek(SeekFrom::Start(phoff));
     file.read(&mut buf)?;
     let phdrs = SegmentTable::new(ehdr.endianness, ehdr.class, &buf[..]);

@@ -6,6 +6,7 @@ use axio::SeekFrom;
 use capability::{Cap, WithCap};
 use core::fmt;
 use fstree::FsStruct;
+use alloc::collections::BTreeMap;
 
 #[cfg(feature = "myfs")]
 pub use crate::dev::Disk;
@@ -26,6 +27,7 @@ pub struct File {
     node: WithCap<VfsNodeRef>,
     is_append: bool,
     offset: u64,
+    pub shared_map: BTreeMap<usize, usize>,
 }
 
 /// An opened directory object, with open permissions and a cursor for
@@ -221,6 +223,7 @@ impl File {
             node: WithCap::new(node, access_cap),
             is_append: opts.append,
             offset: 0,
+            shared_map: BTreeMap::new(),
         })
     }
 

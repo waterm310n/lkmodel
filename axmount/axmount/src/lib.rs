@@ -25,7 +25,7 @@ cfg_if::cfg_if! {
 
 /// Initializes filesystems by block devices.
 pub fn init_filesystems(mut blk_devs: AxDeviceContainer<AxBlockDevice>, need_fmt: bool) -> FsType {
-    error!("Initialize filesystems...");
+    info!("Initialize filesystems...");
 
     let dev = blk_devs.take_one().expect("No block device found!");
     info!("  use block device 0: {:?}", dev.device_name());

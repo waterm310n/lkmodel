@@ -221,7 +221,7 @@ pub fn fstatat(dfd: usize, path: usize, statbuf_ptr: usize, flags: usize) -> usi
     let perm = metadata.perm().bits() as u32;
     let st_mode = ((ty as u32) << 12) | perm;
     let st_size = metadata.size();
-    error!("st_size: {}", st_size);
+    warn!("st_size: {}", st_size);
 
     unsafe {
         *statbuf = KernelStat {
