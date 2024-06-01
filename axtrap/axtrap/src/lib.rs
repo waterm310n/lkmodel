@@ -9,11 +9,19 @@ pub mod irq;
 mod platform;
 use preempt_guard::NoPreempt;
 
-pub fn init() {
+pub fn early_init() {
     arch::init_trap();
 }
 
-pub fn init_irq() {
+pub fn final_init() {
+    // Todo: extract irq as standalone modular axirq.
+    info!("Initialize interrupt handlers...");
+    init_irq();
+    info!("Initialize systemcalls ...");
+    axsyscall::init();
+}
+
+fn init_irq() {
     use axhal::time::TIMER_IRQ_NUM;
 
     // Setup timer interrupt handler

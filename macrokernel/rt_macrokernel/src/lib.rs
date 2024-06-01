@@ -54,7 +54,7 @@ pub fn init(cpu_id: usize, dtb: usize) {
 
     axhal::arch_init_early(cpu_id);
 
-    axtrap::init();
+    axtrap::early_init();
 
     info!("Found physcial memory regions:");
     for r in memory_regions() {
@@ -85,11 +85,7 @@ pub fn init(cpu_id: usize, dtb: usize) {
 
     //self::mp::start_secondary_cpus(cpu_id);
 
-    // Todo: extract irq as standalone modular axirq.
-    info!("Initialize interrupt handlers...");
-    axtrap::init_irq();
-
-    axsyscall::init();
+    axtrap::final_init();
 
     info!("Primary CPU {} init OK.", cpu_id);
     INITED_CPUS.fetch_add(1, Ordering::Relaxed);

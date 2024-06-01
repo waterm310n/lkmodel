@@ -20,6 +20,7 @@ rt_early_console = { path = "./early_console/rt_early_console" }
 
 [patch."ssh://git@github.com/shilei-massclouds/fork"]
 fork = { path = "./fork/fork" }
+rt_fork = { path = "./fork/rt_fork" }
 
 [patch."ssh://git@github.com/shilei-massclouds/macrokernel"]
 rt_macrokernel = { path = "./macrokernel/rt_macrokernel" }
