@@ -13,6 +13,7 @@ axconfig = { path = "./axconfig/axconfig" }
 
 [patch."ssh://git@github.com/shilei-massclouds/axhal"]
 axhal = { path = "./axhal/axhal" }
+rt_axhal = { path = "./axhal/rt_axhal" }
 
 [patch."ssh://git@github.com/shilei-massclouds/early_console"]
 early_console = { path = "./early_console/early_console" }
@@ -70,6 +71,7 @@ capability = { path = "./capability/capability" }
 
 [patch."ssh://git@github.com/shilei-massclouds/driver_block"]
 driver_block = { path = "./driver_block/driver_block" }
+rt_driver_block = { path = "./driver_block/rt_driver_block" }
 
 [patch."ssh://git@github.com/shilei-massclouds/driver_common"]
 driver_common = { path = "./driver_common/driver_common" }
@@ -107,14 +109,16 @@ path = "./rust_fatfs/rust_fatfs"
 [patch."ssh://git@github.com/shilei-massclouds/axfs_vfs".axfs_vfs]
 path = "./axfs_vfs/axfs_vfs"
 
-[patch."ssh://git@github.com/shilei-massclouds/axmount".axmount]
-path = "./axmount/axmount"
+[patch."ssh://git@github.com/shilei-massclouds/axmount"]
+axmount = { path = "./axmount/axmount" }
+rt_axmount = { path = "./axmount/rt_axmount" }
 
 [patch."ssh://git@github.com/shilei-massclouds/driver_pci".driver_pci]
 path = "./driver_pci/driver_pci"
 
-[patch."ssh://git@github.com/shilei-massclouds/driver_virtio".driver_virtio]
-path = "./driver_virtio/driver_virtio"
+[patch."ssh://git@github.com/shilei-massclouds/driver_virtio"]
+driver_virtio = { path = "./driver_virtio/driver_virtio" }
+rt_driver_virtio = { path = "./driver_virtio/rt_driver_virtio" }
 
 [patch."ssh://git@github.com/shilei-massclouds/axsyscall".axsyscall]
 path = "./axsyscall/axsyscall"
@@ -151,8 +155,9 @@ path = "./fstree/fstree"
 [patch."ssh://git@github.com/shilei-massclouds/spinpreempt".spinpreempt]
 path = "./spinpreempt/spinpreempt"
 
-[patch."ssh://git@github.com/shilei-massclouds/mutex".mutex]
-path = "./mutex/mutex"
+[patch."ssh://git@github.com/shilei-massclouds/mutex"]
+mutex = { path = "./mutex/mutex" }
+rt_mutex = { path = "./mutex/rt_mutex" }
 
 [patch."ssh://git@github.com/shilei-massclouds/signal".signal]
 path = "./signal/signal"

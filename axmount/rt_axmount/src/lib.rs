@@ -23,12 +23,11 @@ pub extern "Rust" fn runtime_main(cpu_id: usize, _dtb_pa: usize) {
 
     axhal::cpu::init_primary(cpu_id);
 
-    let start = align_up_4k(virt_to_phys(_ekernel as usize));
-    let end = align_down_4k(axconfig::PHYS_MEMORY_END);
-    axalloc::global_init(phys_to_virt(start), end - start);
+    info!("Initialize global memory allocator...");
+    axalloc::init();
 
     info!("Initialize kernel page table...");
-    remap_kernel_memory().expect("remap kernel memoy failed");
+    page_table::init();
 
     let ctx = Arc::new(taskctx::init_sched_info());
     unsafe {
@@ -37,8 +36,7 @@ pub extern "Rust" fn runtime_main(cpu_id: usize, _dtb_pa: usize) {
     }
 
     // Init runq just for using mutex.
-    let idle = task::init();
-    run_queue::init(idle);
+    task::init();
 
     {
         //let mut disk = ramdisk::RamDisk::new(0x10000);
@@ -50,7 +48,10 @@ pub extern "Rust" fn runtime_main(cpu_id: usize, _dtb_pa: usize) {
         let root_dir = axmount::init_rootfs(main_fs);
         let mut fs = FsStruct::new();
         fs.init(root_dir);
-        axfile::api::create_dir("/testcases", &fs).unwrap();
+        match axfile::api::create_dir("/testcases", &fs) {
+            Ok(_) => info!("create /testcases ok!"),
+            Err(e) => error!("create /testcases failed {}", e),
+        }
 
         let fname = "/testcases/new-file.txt";
         info!("test create file {:?}:", fname);
@@ -64,26 +65,6 @@ pub extern "Rust" fn runtime_main(cpu_id: usize, _dtb_pa: usize) {
 
     info!("[rt_axmount]: ok!");
     axhal::misc::terminate();
-}
-
-fn remap_kernel_memory() -> Result<(), axhal::paging::PagingError> {
-    use axhal::paging::PageTable;
-    use axhal::paging::{reuse_page_table_root, setup_page_table_root};
-    use axhal::mem::phys_to_virt;
-
-    let mut kernel_page_table = PageTable::try_new()?;
-    for r in memory_regions() {
-        kernel_page_table.map_region(
-            phys_to_virt(r.paddr),
-            r.paddr,
-            r.size,
-            r.flags.into(),
-            true,
-        )?;
-    }
-    setup_page_table_root(kernel_page_table);
-
-    Ok(())
 }
 
 pub fn panic(info: &PanicInfo) -> ! {

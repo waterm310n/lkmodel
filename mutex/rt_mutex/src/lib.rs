@@ -29,11 +29,12 @@ pub extern "Rust" fn runtime_main(cpu_id: usize, _dtb_pa: usize) {
         axhal::cpu::set_current_task_ptr(ptr);
     }
 
-    run_queue::init();
+    task::init();
 
     {
         let mutex: Mutex<u32> = Mutex::new(0);
         // Todo: do some tests according tests below.
+        info!("{}", *mutex.lock());
     }
 
     info!("[rt_mutex]: ok!");
