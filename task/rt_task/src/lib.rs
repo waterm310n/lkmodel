@@ -5,8 +5,6 @@ extern crate axlog2;
 extern crate alloc;
 
 use core::panic::PanicInfo;
-use axtype::{align_up_4k, align_down_4k, phys_to_virt, virt_to_phys};
-use axhal::mem::memory_regions;
 
 /// Entry
 #[no_mangle]
@@ -17,47 +15,18 @@ pub extern "Rust" fn runtime_main(cpu_id: usize, _dtb_pa: usize) {
     axlog2::set_max_level("debug");
     info!("[rt_task]: ... cpuid {}", cpu_id);
 
-    axhal::cpu::init_primary(cpu_id);
+    axhal::arch_init_early(cpu_id);
 
-    let start = align_up_4k(virt_to_phys(_ekernel as usize));
-    let end = align_down_4k(axconfig::PHYS_MEMORY_END);
-    axalloc::global_init(phys_to_virt(start), end - start);
-
-    info!("Initialize kernel page table...");
-    remap_kernel_memory().expect("remap kernel memoy failed");
+    axalloc::init();
+    page_table::init();
 
     task::init();
-    run_queue::init();
 
     info!("[rt_task]: ok!");
     axhal::misc::terminate();
 }
 
-fn remap_kernel_memory() -> Result<(), axhal::paging::PagingError> {
-    use axhal::paging::PageTable;
-    use axhal::paging::setup_page_table_root;
-    use axhal::mem::phys_to_virt;
-
-    let mut kernel_page_table = PageTable::try_new()?;
-    for r in memory_regions() {
-        kernel_page_table.map_region(
-            phys_to_virt(r.paddr),
-            r.paddr,
-            r.size,
-            r.flags.into(),
-            true,
-        )?;
-    }
-    setup_page_table_root(kernel_page_table);
-
-    Ok(())
-}
-
 pub fn panic(info: &PanicInfo) -> ! {
     error!("{}", info);
     arch_boot::panic(info)
-}
-
-extern "C" {
-    fn _ekernel();
 }
