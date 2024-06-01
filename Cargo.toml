@@ -119,8 +119,9 @@ path = "./driver_virtio/driver_virtio"
 [patch."ssh://git@github.com/shilei-massclouds/axsyscall".axsyscall]
 path = "./axsyscall/axsyscall"
 
-[patch."ssh://git@github.com/shilei-massclouds/exec".exec]
-path = "./exec/exec"
+[patch."ssh://git@github.com/shilei-massclouds/exec"]
+exec = { path = "./exec/exec" }
+rt_exec = { path = "./exec/rt_exec" }
 
 [patch."ssh://git@github.com/shilei-massclouds/mmap".mmap]
 path = "./mmap/mmap"
