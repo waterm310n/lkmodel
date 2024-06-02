@@ -5,8 +5,8 @@ use core::panic::PanicInfo;
 
 #[no_mangle]
 pub extern "Rust" fn runtime_main(_cpu_id: usize, _dtb_pa: usize) {
-    assert_eq!(axconfig::ARCH, "riscv64");
-    axhal::misc::terminate();
+    assert_eq!(axconfig::ARCH, env!("AX_ARCH"));
+    panic!("Reach here!");
 }
 
 #[panic_handler]

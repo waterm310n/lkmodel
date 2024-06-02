@@ -3,6 +3,7 @@ resolver = "2"
 members = [
     "axconfig/rt_axconfig",
     "early_console/rt_early_console",
+    "axhal/rt_axhal",
     "macrokernel/rt_macrokernel",
 ]
 

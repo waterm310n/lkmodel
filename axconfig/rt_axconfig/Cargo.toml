@@ -8,4 +8,3 @@ edition = "2021"
 [dependencies]
 arch_boot = { git = "ssh://git@github.com/shilei-massclouds/arch_boot" }
 axconfig = { git = "ssh://git@github.com/shilei-massclouds/axconfig" }
-axhal = { git = "ssh://git@github.com/shilei-massclouds/axhal" }
