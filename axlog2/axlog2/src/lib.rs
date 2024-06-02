@@ -219,9 +219,9 @@ pub fn __print_impl(args: fmt::Arguments) {
 ///
 /// This function should be called before any log macros are used, otherwise
 /// nothing will be printed.
-pub fn init() {
+pub fn init(level: &str) {
     log::set_logger(&Logger).unwrap();
-    log::set_max_level(LevelFilter::Warn);
+    set_max_level(level);
 }
 
 /// Set the maximum log level.

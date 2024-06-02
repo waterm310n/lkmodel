@@ -3,6 +3,7 @@ resolver = "2"
 members = [
     "axconfig/rt_axconfig",
     "early_console/rt_early_console",
+    "axlog2/rt_axlog2",
     "axhal/rt_axhal",
     "macrokernel/rt_macrokernel",
 ]
@@ -43,6 +44,7 @@ axerrno = { path = "./axerrno/axerrno" }
 
 [patch."ssh://git@github.com/shilei-massclouds/axlog2"]
 axlog2 = { path = "./axlog2/axlog2" }
+rt_axlog2 = { path = "./axlog2/rt_axlog2" }
 
 [patch."ssh://git@github.com/shilei-massclouds/kernel_guard_base"]
 kernel_guard_base = { path = "./kernel_guard_base/kernel_guard_base" }
