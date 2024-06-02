@@ -1,6 +1,9 @@
 [workspace]
 resolver = "2"
-members = ["proj"]
+members = [
+    "macrokernel/rt_macrokernel",
+    "early_console/rt_early_console",
+]
 
 [profile.release]
 lto = true

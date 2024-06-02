@@ -1,6 +1,7 @@
 //! Startup process for monolithic kernel.
 
-#![cfg_attr(not(test), no_std)]
+#![no_std]
+#![no_main]
 
 #[macro_use]
 extern crate axlog2;
@@ -249,6 +250,7 @@ fn run_init_process(init_filename: &str) -> LinuxResult {
     exec::kernel_execve(init_filename)
 }
 
+#[panic_handler]
 pub fn panic(info: &PanicInfo) -> ! {
     error!("{}", info);
     arch_boot::panic(info)
