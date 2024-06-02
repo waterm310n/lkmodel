@@ -1,8 +1,9 @@
 [workspace]
 resolver = "2"
 members = [
-    "macrokernel/rt_macrokernel",
+    "axconfig/rt_axconfig",
     "early_console/rt_early_console",
+    "macrokernel/rt_macrokernel",
 ]
 
 [profile.release]
@@ -13,6 +14,7 @@ arch_boot = { path = "./arch_boot/arch_boot" }
 
 [patch."ssh://git@github.com/shilei-massclouds/axconfig"]
 axconfig = { path = "./axconfig/axconfig" }
+rt_axconfig = { path = "./axconfig/rt_axconfig" }
 
 [patch."ssh://git@github.com/shilei-massclouds/axhal"]
 axhal = { path = "./axhal/axhal" }
