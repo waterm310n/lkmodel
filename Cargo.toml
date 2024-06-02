@@ -7,6 +7,7 @@ members = [
     "axhal/rt_axhal",
     "axalloc/rt_axalloc",
     "page_table/rt_page_table",
+    "mm/rt_mm",
     "macrokernel/rt_macrokernel",
 ]
 
@@ -155,8 +156,9 @@ path = "./filetable/filetable"
 [patch."ssh://git@github.com/shilei-massclouds/fileops".fileops]
 path = "./fileops/fileops"
 
-[patch."ssh://git@github.com/shilei-massclouds/mm".mm]
-path = "./mm/mm"
+[patch."ssh://git@github.com/shilei-massclouds/mm"]
+mm = { path = "./mm/mm" }
+rt_mm = { path = "./mm/rt_mm" }
 
 [patch."ssh://git@github.com/shilei-massclouds/axfile".axfile]
 path = "./axfile/axfile"
