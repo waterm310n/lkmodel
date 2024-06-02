@@ -5,6 +5,8 @@ members = [
     "early_console/rt_early_console",
     "axlog2/rt_axlog2",
     "axhal/rt_axhal",
+    "axalloc/rt_axalloc",
+    "page_table/rt_page_table",
     "macrokernel/rt_macrokernel",
 ]
 
@@ -38,6 +40,7 @@ allocator = { path = "./allocator/allocator" }
 
 [patch."ssh://git@github.com/shilei-massclouds/axalloc"]
 axalloc = { path = "./axalloc/axalloc" }
+rt_axalloc = { path = "./axalloc/rt_axalloc" }
 
 [patch."ssh://git@github.com/shilei-massclouds/axerrno"]
 axerrno = { path = "./axerrno/axerrno" }
@@ -58,6 +61,7 @@ memory_addr = { path = "./memory_addr/memory_addr" }
 [patch."ssh://git@github.com/shilei-massclouds/page_table"]
 page_table = { path = "./page_table/page_table" }
 page_table_entry = { path = "./page_table/page_table_entry" }
+rt_page_table = { path = "./page_table/rt_page_table" }
 
 [patch."ssh://git@github.com/shilei-massclouds/percpu2"]
 percpu2 = { path = "./percpu2/percpu2" }
