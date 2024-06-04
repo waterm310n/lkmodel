@@ -1,4 +1,5 @@
 #![no_std]
+#![no_main]
 
 #[macro_use]
 extern crate axlog2;
@@ -6,10 +7,7 @@ extern crate alloc;
 use alloc::sync::Arc;
 
 use core::panic::PanicInfo;
-use axtype::{align_up_4k, align_down_4k, phys_to_virt, virt_to_phys};
-use driver_block::{ramdisk, BlockDriverOps};
-use axdriver::{prelude::*, AxDeviceContainer};
-use axhal::mem::memory_regions;
+use axdriver::{AxDeviceContainer};
 use fstree::FsStruct;
 
 /// Entry
@@ -17,8 +15,7 @@ use fstree::FsStruct;
 pub extern "Rust" fn runtime_main(cpu_id: usize, _dtb_pa: usize) {
     assert_eq!(cpu_id, 0);
 
-    axlog2::init();
-    axlog2::set_max_level("debug");
+    axlog2::init("debug");
     info!("[rt_axmount]: ... cpuid {}", cpu_id);
 
     axhal::cpu::init_primary(cpu_id);
@@ -41,8 +38,8 @@ pub extern "Rust" fn runtime_main(cpu_id: usize, _dtb_pa: usize) {
     {
         //let mut disk = ramdisk::RamDisk::new(0x10000);
         let mut alldevs = axdriver::init_drivers();
-        let mut disk = alldevs.block.take_one().unwrap();
-        let mut disk = AxDeviceContainer::from_one(disk);
+        let disk = alldevs.block.take_one().unwrap();
+        let disk = AxDeviceContainer::from_one(disk);
 
         let main_fs = axmount::init_filesystems(disk, false);
         let root_dir = axmount::init_rootfs(main_fs);
@@ -67,6 +64,7 @@ pub extern "Rust" fn runtime_main(cpu_id: usize, _dtb_pa: usize) {
     axhal::misc::terminate();
 }
 
+#[panic_handler]
 pub fn panic(info: &PanicInfo) -> ! {
     error!("{}", info);
     arch_boot::panic(info)

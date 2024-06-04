@@ -1,4 +1,5 @@
 #![no_std]
+#![no_main]
 
 #[macro_use]
 extern crate axlog2;
@@ -6,7 +7,6 @@ extern crate alloc;
 use alloc::vec;
 
 use core::panic::PanicInfo;
-use axtype::{align_up_4k, align_down_4k, phys_to_virt, virt_to_phys};
 use driver_common::{BaseDriverOps, DeviceType};
 use driver_block::{ramdisk, BlockDriverOps};
 
@@ -16,13 +16,10 @@ const BLOCK_SIZE: usize = 0x200;    // 512
 /// Entry
 #[no_mangle]
 pub extern "Rust" fn runtime_main(_cpu_id: usize, _dtb_pa: usize) {
-    axlog2::init();
-    axlog2::set_max_level("info");
+    axlog2::init("info");
     info!("[rt_ramdisk]: ...");
 
-    let start = align_up_4k(virt_to_phys(_ekernel as usize));
-    let end = align_down_4k(axconfig::PHYS_MEMORY_END);
-    axalloc::global_init(phys_to_virt(start), end - start);
+    axalloc::init();
 
     let mut disk = ramdisk::RamDisk::new(0x1000);
     assert_eq!(disk.device_type(), DeviceType::Block);
@@ -51,11 +48,8 @@ pub extern "Rust" fn runtime_main(_cpu_id: usize, _dtb_pa: usize) {
     axhal::misc::terminate();
 }
 
+#[panic_handler]
 pub fn panic(info: &PanicInfo) -> ! {
     error!("{}", info);
     arch_boot::panic(info)
-}
-
-extern "C" {
-    fn _ekernel();
 }

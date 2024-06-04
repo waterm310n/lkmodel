@@ -1,4 +1,5 @@
 #![no_std]
+#![no_main]
 
 #[macro_use]
 extern crate axlog2;
@@ -15,8 +16,7 @@ use mutex::Mutex;
 pub extern "Rust" fn runtime_main(cpu_id: usize, _dtb_pa: usize) {
     axhal::cpu::init_primary(cpu_id);
 
-    axlog2::init();
-    axlog2::set_max_level("debug");
+    axlog2::init("debug");
     info!("[rt_mutex]: ...");
 
     let start = align_up_4k(virt_to_phys(_ekernel as usize));
@@ -41,6 +41,7 @@ pub extern "Rust" fn runtime_main(cpu_id: usize, _dtb_pa: usize) {
     axhal::misc::terminate();
 }
 
+#[panic_handler]
 pub fn panic(info: &PanicInfo) -> ! {
     error!("{}", info);
     arch_boot::panic(info)

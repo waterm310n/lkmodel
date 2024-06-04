@@ -285,7 +285,7 @@ fn chroot(args: &RootArgs) -> Result<()> {
 
     // Todo: check that target mod actually exists in root_list.
     let new = new_root.trim_end_matches('/');
-    assert!(new.starts_with("rt_"));
+    assert!(new.starts_with("rt_") || new.starts_with("test_"));
 
     if !local_mode() {
         _put(old)?;

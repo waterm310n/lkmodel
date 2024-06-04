@@ -1,4 +1,5 @@
 #![no_std]
+#![no_main]
 
 #[macro_use]
 extern crate axlog2;
@@ -19,8 +20,7 @@ pub extern "Rust" fn runtime_main(cpu_id: usize, dtb: usize) {
 pub fn init(cpu_id: usize, _dtb: usize) {
     assert_eq!(cpu_id, 0);
 
-    axlog2::init();
-    axlog2::set_max_level("debug");
+    axlog2::init("debug");
     info!("[rt_fork]: ... cpuid {}", cpu_id);
 
     axhal::arch_init_early(cpu_id);
@@ -66,11 +66,8 @@ fn kernel_init() {
     rq.lock().resched(false);
 }
 
+#[panic_handler]
 pub fn panic(info: &PanicInfo) -> ! {
     error!("{}", info);
     arch_boot::panic(info)
-}
-
-extern "C" {
-    fn _ekernel();
 }

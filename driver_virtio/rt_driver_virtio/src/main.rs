@@ -1,4 +1,5 @@
 #![no_std]
+#![no_main]
 
 #[macro_use]
 extern crate axlog2;
@@ -6,11 +7,8 @@ extern crate alloc;
 use alloc::vec;
 
 use core::panic::PanicInfo;
-use axtype::{align_up_4k, align_down_4k, phys_to_virt, virt_to_phys};
 use driver_common::{BaseDriverOps, DeviceType};
-use driver_block::{ramdisk, BlockDriverOps};
-use driver_virtio::blk::VirtIoBlkDev;
-use axhal::mem::memory_regions;
+use driver_block::BlockDriverOps;
 
 const DISK_SIZE: usize = 0x400_0000;    // 64M
 const BLOCK_SIZE: usize = 0x200;        // 512
@@ -18,8 +16,7 @@ const BLOCK_SIZE: usize = 0x200;        // 512
 /// Entry
 #[no_mangle]
 pub extern "Rust" fn runtime_main(cpu_id: usize, _dtb_pa: usize) {
-    axlog2::init();
-    axlog2::set_max_level("debug");
+    axlog2::init("debug");
     info!("[rt_driver_virtio]: ...");
 
     axhal::arch_init_early(cpu_id);
@@ -69,6 +66,7 @@ pub extern "Rust" fn runtime_main(cpu_id: usize, _dtb_pa: usize) {
     axhal::misc::terminate();
 }
 
+#[panic_handler]
 pub fn panic(info: &PanicInfo) -> ! {
     error!("{}", info);
     arch_boot::panic(info)

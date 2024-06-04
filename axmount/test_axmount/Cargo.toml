@@ -19,3 +19,4 @@ fstree = { git = "ssh://git@github.com/shilei-massclouds/fstree.git" }
 axfile = { git = "ssh://git@github.com/shilei-massclouds/axfile.git" }
 task = { git = "ssh://git@github.com/shilei-massclouds/task.git" }
 axio = { git = "ssh://git@github.com/shilei-massclouds/axio.git" }
+page_table = { git = "ssh://git@github.com/shilei-massclouds/page_table" }
