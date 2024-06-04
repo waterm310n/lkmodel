@@ -1,32 +1,26 @@
 # lkmodel
 LK model components.
 
-### 下载lktool和编译该工具
+### Fork&&Clone lkmodel，并切换分支dev
 
-选择一个工作目录下载lktool工具并编译。
+Fork lkmodel到自己的github账号，Clone到本地。
+首先编译工具lktool。
 
 ```sh
-git clone git@github.com:shilei-massclouds/lktool.git
-cd lktool
-git checkout refine_init
+git checkout dev
+cd tools/lktool
 cargo build
+cd ../..
 ```
 
-把lktool加入到环境变量，采取临时方式
+把lktool加入到环境变量，并采取短名称lk
 
 ```sh
-export PATH=$PATH:/home/cloud/gitWork/lktool/target/debug
+export PATH=$PATH:/home/cloud/gitWork/lkmodel/tools/lktool/target/debug
+alias lk='lktool'
 ```
 
 > 注意：需要把/home/cloud/gitWork/lktool替换为实际路径
-
-### 进入lkmodel目录，并切换分支
-
-当前最新分支：regression_testing
-
-```sh
-git checkout regression_testing
-```
 
 ### 查看可以作为根的组件
 
@@ -115,7 +109,7 @@ make autotools
 
 2. 在lkmodel目录下配置lk.toml
 
-把下面的**path**改为第1步的路径。
+把下面的**path**改为本地ltp的实际路径。
 
 ```
 [ltp]
