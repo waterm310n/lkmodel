@@ -126,6 +126,7 @@ impl From<PageSize> for usize {
 
 pub fn init() {
     axconfig::init_once!();
+    info!("Initialize kernel page table...");
 
     if axhal::cpu::_this_cpu_is_bsp() {
         let mut kernel_page_table = paging::PageTable::try_new().unwrap();

@@ -235,6 +235,18 @@ pub fn global_add_memory(start_vaddr: usize, size: usize) -> AllocResult {
 
 pub fn init() {
     axconfig::init_once!();
+    info!("Initialize global memory allocator...");
+
+    info!("Found physcial memory regions:");
+    for r in memory_regions() {
+        info!(
+            "  [{:x?}, {:x?}) {} ({:?})",
+            r.paddr,
+            r.paddr + r.size,
+            r.name,
+            r.flags
+        );
+    }
     info!("  use {} allocator.", global_allocator().name());
 
     let mut max_region_size = 0;

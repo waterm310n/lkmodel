@@ -65,6 +65,7 @@ signal = "signal"
 handler_table = "handler_table"
 elf = "elf"
 fork = "fork"
+userboot = "userboot"
 
 # Root components list
 # Styles are just as [mod_list]
