@@ -269,7 +269,9 @@ pub fn yield_now() {
 }
 
 pub fn init() {
-    info!("task::init ...");
+    axconfig::init_once!();
+    info!("Initialize schedule system ...");
+
     let init_task = TaskStruct::new();
     init_task.set_state(TaskState::Running);
     let init_task = Arc::new(init_task);

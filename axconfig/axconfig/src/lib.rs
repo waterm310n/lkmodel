@@ -17,3 +17,15 @@ pub use config::*;
 
 /// End address of the whole physical memory.
 pub const PHYS_MEMORY_END: usize = PHYS_MEMORY_BASE + PHYS_MEMORY_SIZE;
+
+#[macro_export]
+macro_rules! init_once {
+    () => {{
+        use core::sync::atomic::{AtomicBool, Ordering};
+        static INITED: AtomicBool = AtomicBool::new(false);
+        if INITED.load(Ordering::SeqCst) {
+            return;
+        }
+        INITED.store(true, Ordering::SeqCst);
+    }}
+}

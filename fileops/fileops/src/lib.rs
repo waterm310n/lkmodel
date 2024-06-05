@@ -374,3 +374,14 @@ pub fn ftruncate(fd: usize, length: usize) -> usize {
     });
     0
 }
+
+pub fn init() {
+    axconfig::init_once!();
+    info!("Initialize file ops ...");
+
+    task::init();
+
+    let all_devices = axdriver::init_drivers();
+    let root_dir = axmount::init(all_devices.block);
+    task::current().fs.lock().init(root_dir);
+}

@@ -25,6 +25,7 @@ log = "0.4"
 spinbase = { git = "ssh://git@github.com/shilei-massclouds/spinbase.git" }
 chrono = { version = "0.4", optional = true }
 early_console = { git = "ssh://git@github.com/shilei-massclouds/early_console.git" }
+axconfig = { git = "ssh://git@github.com/shilei-massclouds/axconfig" }
 
 [dev-dependencies]
 axlog2 = { path = ".", features = ["std"] }

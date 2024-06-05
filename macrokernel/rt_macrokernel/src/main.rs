@@ -10,18 +10,8 @@ extern crate alloc;
 use axerrno::{LinuxError, LinuxResult};
 use axhal::mem::{memory_regions, phys_to_virt};
 use axtype::DtbInfo;
-use core::sync::atomic::{AtomicUsize, Ordering};
 use fork::{user_mode_thread, CloneFlags};
 use core::panic::PanicInfo;
-
-#[cfg(feature = "smp")]
-mod mp;
-
-static INITED_CPUS: AtomicUsize = AtomicUsize::new(0);
-
-fn is_init_ok() -> bool {
-    INITED_CPUS.load(Ordering::Acquire) == axconfig::SMP
-}
 
 const LOGO: &str = r#"
        d8888                            .d88888b.   .d8888b.
@@ -38,7 +28,7 @@ d88P     888 888      "Y8888P  "Y8888   "Y88888P"   "Y8888P"
 #[cfg_attr(not(test), no_mangle)]
 pub extern "Rust" fn runtime_main(cpu_id: usize, dtb: usize) {
     init(cpu_id, dtb);
-    run(cpu_id, dtb);
+    start(cpu_id, dtb);
     panic!("Never reach here!");
 }
 
@@ -46,15 +36,12 @@ pub fn init(cpu_id: usize, dtb: usize) {
     show_logo();
 
     axlog2::init(option_env!("AX_LOG").unwrap_or(""));
-    info!("Logging is enabled.");
     info!(
         "MacroKernel is starting: Primary CPU {} started, dtb = {:#x}.",
         cpu_id, dtb
     );
 
     axhal::arch_init_early(cpu_id);
-
-    axtrap::early_init();
 
     info!("Found physcial memory regions:");
     for r in memory_regions() {
@@ -76,23 +63,11 @@ pub fn init(cpu_id: usize, dtb: usize) {
     info!("Initialize platform devices...");
     axhal::platform_init();
 
-    info!("Initialize schedule system ...");
     task::init();
 
-    let all_devices = axdriver::init_drivers();
-    let root_dir = axmount::init(all_devices.block);
-    task::current().fs.lock().init(root_dir);
+    fileops::init();
 
-    //self::mp::start_secondary_cpus(cpu_id);
-
-    axtrap::final_init();
-
-    info!("Primary CPU {} init OK.", cpu_id);
-    INITED_CPUS.fetch_add(1, Ordering::Relaxed);
-
-    while !is_init_ok() {
-        core::hint::spin_loop();
-    }
+    axtrap::init();
 }
 
 fn show_logo() {
@@ -115,7 +90,8 @@ fn show_logo() {
     );
 }
 
-pub fn run(_cpu_id: usize, dtb: usize) {
+pub fn start(_cpu_id: usize, dtb: usize) {
+    axtrap::start();
     start_kernel(dtb).expect("Fatal error!");
 }
 

@@ -78,6 +78,8 @@ pub use self::platform::platform_init;
 pub use self::platform::platform_init_secondary;
 
 pub fn arch_init_early(cpu_id: usize) {
+    axconfig::init_once!();
+
     crate::cpu::init_primary(cpu_id);
     crate::arch::early_init();
 }

@@ -15,6 +15,9 @@ axio = { git = "ssh://git@github.com/shilei-massclouds/axio.git" }
 axtype = { git = "ssh://git@github.com/shilei-massclouds/axtype.git" }
 axhal = { git = "ssh://git@github.com/shilei-massclouds/axhal.git" }
 early_console = { git = "ssh://git@github.com/shilei-massclouds/early_console.git" }
+axdriver = { git = "ssh://git@github.com/shilei-massclouds/axdriver" }
+axmount = { git = "ssh://git@github.com/shilei-massclouds/axmount" }
+axconfig = { git = "ssh://git@github.com/shilei-massclouds/axconfig" }
 
 [target.'cfg(any(target_arch = "riscv32", target_arch = "riscv64"))'.dependencies]
 riscv = "0.10"

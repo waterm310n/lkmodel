@@ -220,8 +220,11 @@ pub fn __print_impl(args: fmt::Arguments) {
 /// This function should be called before any log macros are used, otherwise
 /// nothing will be printed.
 pub fn init(level: &str) {
+    axconfig::init_once!();
+
     log::set_logger(&Logger).unwrap();
     set_max_level(level);
+    early_console::write_bytes(b"Logging is enabled.\n\n");
 }
 
 /// Set the maximum log level.
