@@ -54,7 +54,7 @@ fn syscall<F>(tf: &mut TrapFrame, do_syscall: F)
 where
     F: FnOnce(SyscallArgs, usize) -> usize,
 {
-    error!("Syscall: {:#x}, {}", tf.rax, tf.rax);
+    info!("Syscall: {:#x}, {}", tf.rax, tf.rax);
     let args = syscall_args(tf);
     tf.rax = do_syscall(args, tf.rax as usize) as u64;
 }
