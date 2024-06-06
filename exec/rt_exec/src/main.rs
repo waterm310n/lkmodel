@@ -1,6 +1,7 @@
 //! Startup process for monolithic kernel.
 
-#![cfg_attr(not(test), no_std)]
+#![no_std]
+#![no_main]
 
 #[macro_use]
 extern crate axlog2;
@@ -12,9 +13,6 @@ use axtype::DtbInfo;
 use core::sync::atomic::{AtomicUsize, Ordering};
 use fork::{user_mode_thread, CloneFlags};
 use core::panic::PanicInfo;
-
-#[cfg(feature = "smp")]
-mod mp;
 
 static INITED_CPUS: AtomicUsize = AtomicUsize::new(0);
 
@@ -37,45 +35,24 @@ d88P     888 888      "Y8888P  "Y8888   "Y88888P"   "Y8888P"
 #[cfg_attr(not(test), no_mangle)]
 pub extern "Rust" fn runtime_main(cpu_id: usize, dtb: usize) {
     init(cpu_id, dtb);
-    run(cpu_id, dtb);
+    start(cpu_id, dtb);
     panic!("Never reach here!");
 }
 
 pub fn init(cpu_id: usize, dtb: usize) {
-    axlog2::init();
-    axlog2::set_max_level("debug");
-
-    axhal::arch_init_early(cpu_id);
-
-    //axtrap::early_init();
-
-    info!("Initialize global memory allocator...");
-    axalloc::init();
-
-    info!("Initialize kernel page table...");
-    page_table::init();
-
-    info!("Initialize platform devices...");
-    axhal::platform_init();
-
-    info!("Initialize schedule system ...");
-    task::init();
-
-    let all_devices = axdriver::init_drivers();
-    let root_dir = axmount::init(all_devices.block);
-    task::current().fs.lock().init(root_dir);
+    axlog2::init("info");
+    exec::init(cpu_id, dtb);
+    axtrap::init(cpu_id, dtb);
 }
 
-pub fn run(_cpu_id: usize, dtb: usize) {
+pub fn start(_cpu_id: usize, dtb: usize) {
     let filename = "/sbin/init";
-    let tid = user_mode_thread(
-        move || {
-            exec::kernel_execve(filename);
-        },
-        CloneFlags::CLONE_FS,
-    );
+    exec::kernel_execve(filename);
+    // Todo: switch to userland app
+    panic!("exec ok!");
 }
 
+#[panic_handler]
 pub fn panic(info: &PanicInfo) -> ! {
     error!("{}", info);
     arch_boot::panic(info)

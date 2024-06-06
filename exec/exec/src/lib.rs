@@ -434,3 +434,15 @@ fn make_prot(pflags: u32) -> usize {
 
     prot
 }
+
+pub fn init(cpu_id: usize, _dtb: usize) {
+    axconfig::init_once!();
+
+    axlog2::init(option_env!("AX_LOG").unwrap_or(""));
+    axhal::arch_init_early(cpu_id);
+    axalloc::init();
+    page_table::init();
+    axhal::platform_init();
+    task::init();
+    fileops::init();
+}

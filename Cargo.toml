@@ -9,6 +9,7 @@ members = [
     "page_table/rt_page_table",
     "mm/rt_mm",
     "fork/rt_fork",
+    "exec/rt_exec",
     "mutex/rt_mutex",
     "task/rt_task",
     "axmount/rt_axmount",
