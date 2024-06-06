@@ -270,6 +270,11 @@ pub fn yield_now() {
     rq.lock().resched(false);
 }
 
+pub fn activate(task: TaskRef) {
+    let rq = run_queue::task_rq(&task.sched_info);
+    rq.lock().activate_task(task.sched_info.clone());
+}
+
 pub fn init() {
     axconfig::init_once!();
     info!("Initialize schedule system ...");

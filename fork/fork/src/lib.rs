@@ -120,8 +120,7 @@ impl KernelCloneArgs {
     /// that must be done for every newly created context, then puts the task
     /// on the runqueue and wakes it.
     fn wake_up_new_task(&self, task: TaskRef) {
-        let rq = run_queue::task_rq(&task.sched_info);
-        rq.lock().activate_task(task.sched_info.clone());
+        task::activate(task.clone());
         info!("wakeup the new task[{}].", task.tid());
     }
 
@@ -344,4 +343,13 @@ pub fn set_tid_address(tidptr: usize) -> usize {
     let mut ctx = taskctx::current_ctx();
     ctx.as_ctx_mut().clear_child_tid = tidptr;
     0
+}
+
+pub fn init(cpu_id: usize, _dtb: usize) {
+    axconfig::init_once!();
+
+    axlog2::init(option_env!("AX_LOG").unwrap_or(""));
+    axhal::arch_init_early(cpu_id);
+    axalloc::init();
+    task::init();
 }

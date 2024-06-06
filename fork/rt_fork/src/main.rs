@@ -13,29 +13,16 @@ use fork::CloneFlags;
 #[no_mangle]
 pub extern "Rust" fn runtime_main(cpu_id: usize, dtb: usize) {
     init(cpu_id, dtb);
-    run(cpu_id, dtb);
+    start(cpu_id, dtb);
     panic!("Never reach here!");
 }
 
-pub fn init(cpu_id: usize, _dtb: usize) {
-    assert_eq!(cpu_id, 0);
-
-    axlog2::init("debug");
-    info!("[rt_fork]: ... cpuid {}", cpu_id);
-
-    axhal::arch_init_early(cpu_id);
-
-    info!("Initialize global memory allocator...");
-    axalloc::init();
-
-    info!("Initialize kernel page table...");
-    page_table::init();
-
-    info!("Initialize schedule system ...");
-    task::init();
+pub fn init(cpu_id: usize, dtb: usize) {
+    axlog2::init("info");
+    fork::init(cpu_id, dtb);
 }
 
-pub fn run(_cpu_id: usize, _dtb: usize) {
+pub fn start(_cpu_id: usize, _dtb: usize) {
     info!("start thread ...");
     let tid = user_mode_thread(
         move || {
@@ -52,17 +39,16 @@ pub fn run(_cpu_id: usize, _dtb: usize) {
 }
 
 fn schedule_preempt_disabled() {
-    let task = task::current();
-    let rq = run_queue::task_rq(&task.sched_info);
-    rq.lock().resched(false);
+    task::yield_now();
 }
 
 /// Prepare for entering first user app.
 fn kernel_init() {
-    info!("enter kernel_init ...");
+    info!("[new process]: enter ...");
     let task = task::current();
     task.set_state(taskctx::TaskState::Blocked);
     let rq = run_queue::task_rq(&task.sched_info);
+    info!("[new process]: yield ...");
     rq.lock().resched(false);
 }
 
