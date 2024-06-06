@@ -265,7 +265,9 @@ pub fn current() -> CurrentTask {
 /// Current task gives up the CPU time voluntarily, and switches to another
 /// ready task.
 pub fn yield_now() {
-    unimplemented!("yield_now");
+    let cur = current();
+    let rq = run_queue::task_rq(&cur.sched_info);
+    rq.lock().resched(false);
 }
 
 pub fn init() {

@@ -23,7 +23,6 @@ pub fn init(cpu_id: usize, _dtb: usize) {
 
     arch::init_trap();
     // Todo: extract irq as standalone modular axirq.
-    info!("Initialize systemcalls ...");
     axsyscall::init();
 
     register_irq_handler(TIMER_IRQ_NUM, || {

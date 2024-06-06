@@ -450,4 +450,6 @@ fn linux_syscall_vfork(_args: SyscallArgs) -> usize {
     fork::sys_vfork()
 }
 
-pub fn init() {}
+pub fn init() {
+    info!("Initialize systemcalls ...");
+}

@@ -23,21 +23,17 @@ pub fn init(cpu_id: usize, _dtb: usize) {
     fileops::init();
 }
 
+/// start_kernel
 pub fn start(_cpu_id: usize, dtb: usize) {
-    start_kernel(dtb).expect("Fatal error!");
-}
-
-fn start_kernel(dtb: usize) -> LinuxResult {
-    let dtb_info = setup_arch(dtb)?;
+    let dtb_info = setup_arch(dtb);
     rest_init(dtb_info);
-    Ok(())
 }
 
-fn setup_arch(dtb: usize) -> LinuxResult<DtbInfo> {
+fn setup_arch(dtb: usize) -> DtbInfo {
     parse_dtb(dtb)
 }
 
-fn parse_dtb(_dtb_pa: usize) -> LinuxResult<DtbInfo> {
+fn parse_dtb(_dtb_pa: usize) -> DtbInfo {
     #[cfg(target_arch = "riscv64")]
     {
         let mut dtb_info = DtbInfo::new();
@@ -62,13 +58,12 @@ fn parse_dtb(_dtb_pa: usize) -> LinuxResult<DtbInfo> {
         };
 
         let dtb_va = phys_to_virt(_dtb_pa.into());
-        let dt = axdtb::DeviceTree::init(dtb_va.into()).unwrap();
-        dt.parse(dt.off_struct, 0, 0, &mut cb).unwrap();
-        Ok(dtb_info)
+        axdtb::parse(dtb_va.into(), &mut cb);
+        dtb_info
     }
     #[cfg(not(target_arch = "riscv64"))]
     {
-        Ok(DtbInfo::new())
+        DtbInfo::new()
     }
 }
 
@@ -102,10 +97,7 @@ fn rest_init(dtb_info: DtbInfo) {
 }
 
 fn schedule_preempt_disabled() {
-    let task = task::current();
-    let rq = run_queue::task_rq(&task.sched_info);
-    rq.lock().resched(false);
-    unimplemented!("schedule_preempt_disabled()");
+    task::yield_now();
 }
 
 fn cpu_startup_entry() {
@@ -135,9 +127,6 @@ fn kernel_init(dtb_info: DtbInfo) {
         return;
     }
 
-    // TODO: Replace this testcase with a more appropriate x86_64 testcase
-    //#[cfg(target_arch = "x86_64")]
-    //compile_error!("Remove it after replace a more appropriate x86_64 testcase.");
     try_to_run_init_process("/sbin/init").expect("No working init found.");
 }
 
