@@ -29,5 +29,6 @@ pub fn force_unlock() {
 ///
 /// For example, advance scheduler states, checks timed events, etc.
 pub fn on_timer_tick() {
+    debug!("timer tick ...");
     RUN_QUEUE.lock().scheduler_timer_tick();
 }

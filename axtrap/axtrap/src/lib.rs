@@ -11,8 +11,15 @@ use crate::irq::IrqHandler;
 use axhal::time::TIMER_IRQ_NUM;
 use preempt_guard::NoPreempt;
 
-pub fn init() {
+pub fn init(cpu_id: usize, _dtb: usize) {
     axconfig::init_once!();
+
+    //axlog2::init(option_env!("AX_LOG").unwrap_or(""));
+    axlog2::init("debug");
+    axhal::arch_init_early(cpu_id);
+    axalloc::init();
+    axhal::platform_init();
+    task::init();
 
     arch::init_trap();
     // Todo: extract irq as standalone modular axirq.
@@ -48,7 +55,7 @@ pub fn register_irq_handler(irq: usize, handler: IrqHandler) {
     irq::register_handler(irq, handler);
 }
 
-pub fn start() {
+pub fn start(_cpu_id: usize, _dtb: usize) {
     // Enable IRQs before starting app
     axhal::arch::enable_irqs();
 }

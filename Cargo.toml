@@ -15,6 +15,7 @@ members = [
     "axmount/test_axmount",
     "driver_block/rt_driver_block",
     "driver_virtio/rt_driver_virtio",
+    "axtrap/rt_axtrap",
     "macrokernel/rt_macrokernel",
 ]
 
@@ -114,8 +115,9 @@ taskctx = { path = "./taskctx/taskctx" }
 [patch."ssh://git@github.com/shilei-massclouds/axdtb".axdtb]
 path = "./axdtb/axdtb"
 
-[patch."ssh://git@github.com/shilei-massclouds/axtrap".axtrap]
-path = "./axtrap/axtrap"
+[patch."ssh://git@github.com/shilei-massclouds/axtrap"]
+axtrap = { path = "./axtrap/axtrap" }
+rt_axtrap = { path = "./axtrap/rt_axtrap" }
 
 [patch."ssh://git@github.com/shilei-massclouds/axtype".axtype]
 path = "./axtype/axtype"

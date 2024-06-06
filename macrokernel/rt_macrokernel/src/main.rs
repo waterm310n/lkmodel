@@ -31,7 +31,7 @@ pub fn init(cpu_id: usize, dtb: usize) {
     show_logo();
 
     userboot::init(cpu_id, dtb);
-    axtrap::init();
+    axtrap::init(cpu_id, dtb);
 
     info!(
         "MacroKernel is starting: Primary CPU {} started, dtb = {:#x}.",
@@ -40,7 +40,7 @@ pub fn init(cpu_id: usize, dtb: usize) {
 }
 
 pub fn start(cpu_id: usize, dtb: usize) {
-    axtrap::start();
+    axtrap::start(cpu_id, dtb);
     userboot::start(cpu_id, dtb);
 }
 

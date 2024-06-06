@@ -22,6 +22,9 @@ lazy_init = { git = "ssh://git@github.com/shilei-massclouds/lazy_init.git" }
 percpu2 = { git = "ssh://git@github.com/shilei-massclouds/percpu2" }
 run_queue = { git = "ssh://git@github.com/shilei-massclouds/run_queue" }
 axconfig = { git = "ssh://git@github.com/shilei-massclouds/axconfig" }
+axlog2 = { git = "ssh://git@github.com/shilei-massclouds/axlog2" }
+axalloc = { git = "ssh://git@github.com/shilei-massclouds/axalloc" }
+task = { git = "ssh://git@github.com/shilei-massclouds/task" }
 
 [target.'cfg(any(target_arch = "riscv32", target_arch = "riscv64"))'.dependencies]
 riscv = "0.10"

@@ -12,6 +12,8 @@ use axtype::DtbInfo;
 use fork::{user_mode_thread, CloneFlags};
 
 pub fn init(cpu_id: usize, _dtb: usize) {
+    axconfig::init_once!();
+
     axlog2::init(option_env!("AX_LOG").unwrap_or(""));
     axhal::arch_init_early(cpu_id);
     axalloc::init();
