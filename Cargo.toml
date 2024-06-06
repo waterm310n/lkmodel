@@ -1,193 +1,195 @@
 [workspace]
 resolver = "2"
 members = [
-    "axconfig/rt_axconfig",
-    "early_console/rt_early_console",
-    "axlog2/rt_axlog2",
-    "axhal/rt_axhal",
-    "axalloc/rt_axalloc",
-    "page_table/rt_page_table",
-    "mm/rt_mm",
-    "fork/rt_fork",
-    "mutex/rt_mutex",
-    "task/rt_task",
-    "axmount/rt_axmount",
-    "axmount/test_axmount",
-    "driver_block/rt_driver_block",
-    "driver_virtio/rt_driver_virtio",
-    "macrokernel/rt_macrokernel",
+    # "axconfig/rt_axconfig",
+    # "early_console/rt_early_console",
+    # "axlog2/rt_axlog2",
+    # "axhal/rt_axhal",
+    # "axalloc/rt_axalloc",
+    # "page_table/rt_page_table",
+    # "mm/rt_mm",
+    # "fork/rt_fork",
+    # "mutex/rt_mutex",
+    # "task/rt_task",
+    # "axmount/rt_axmount",
+    # "axmount/test_axmount",
+    # "driver_block/rt_driver_block",
+    # "driver_virtio/rt_driver_virtio",
+    # "macrokernel/rt_macrokernel",
+    "apps/rt_helloworld",
+    "apps/rt_memtest"
 ]
 
-[profile.release]
-lto = true
+# [profile.release]
+# lto = true
 
-[patch."ssh://git@github.com/shilei-massclouds/arch_boot"]
-arch_boot = { path = "./arch_boot/arch_boot" }
+# [patch."ssh://git@github.com/shilei-massclouds/arch_boot"]
+# arch_boot = { path = "./arch_boot/arch_boot" }
 
-[patch."ssh://git@github.com/shilei-massclouds/axconfig"]
-axconfig = { path = "./axconfig/axconfig" }
-rt_axconfig = { path = "./axconfig/rt_axconfig" }
+# [patch."ssh://git@github.com/shilei-massclouds/axconfig"]
+# axconfig = { path = "./axconfig/axconfig" }
+# rt_axconfig = { path = "./axconfig/rt_axconfig" }
 
-[patch."ssh://git@github.com/shilei-massclouds/axhal"]
-axhal = { path = "./axhal/axhal" }
-rt_axhal = { path = "./axhal/rt_axhal" }
+# [patch."ssh://git@github.com/shilei-massclouds/axhal"]
+# axhal = { path = "./axhal/axhal" }
+# rt_axhal = { path = "./axhal/rt_axhal" }
 
-[patch."ssh://git@github.com/shilei-massclouds/early_console"]
-early_console = { path = "./early_console/early_console" }
-rt_early_console = { path = "./early_console/rt_early_console" }
+# [patch."ssh://git@github.com/shilei-massclouds/early_console"]
+# early_console = { path = "./early_console/early_console" }
+# rt_early_console = { path = "./early_console/rt_early_console" }
 
-[patch."ssh://git@github.com/shilei-massclouds/fork"]
-fork = { path = "./fork/fork" }
-rt_fork = { path = "./fork/rt_fork" }
+# [patch."ssh://git@github.com/shilei-massclouds/fork"]
+# fork = { path = "./fork/fork" }
+# rt_fork = { path = "./fork/rt_fork" }
 
-[patch."ssh://git@github.com/shilei-massclouds/macrokernel"]
-rt_macrokernel = { path = "./macrokernel/rt_macrokernel" }
+# [patch."ssh://git@github.com/shilei-massclouds/macrokernel"]
+# rt_macrokernel = { path = "./macrokernel/rt_macrokernel" }
 
-[patch."ssh://git@github.com/shilei-massclouds/allocator"]
-allocator = { path = "./allocator/allocator" }
+# [patch."ssh://git@github.com/shilei-massclouds/allocator"]
+# allocator = { path = "./allocator/allocator" }
 
-[patch."ssh://git@github.com/shilei-massclouds/axalloc"]
-axalloc = { path = "./axalloc/axalloc" }
-rt_axalloc = { path = "./axalloc/rt_axalloc" }
+# [patch."ssh://git@github.com/shilei-massclouds/axalloc"]
+# axalloc = { path = "./axalloc/axalloc" }
+# rt_axalloc = { path = "./axalloc/rt_axalloc" }
 
-[patch."ssh://git@github.com/shilei-massclouds/axerrno"]
-axerrno = { path = "./axerrno/axerrno" }
+# [patch."ssh://git@github.com/shilei-massclouds/axerrno"]
+# axerrno = { path = "./axerrno/axerrno" }
 
-[patch."ssh://git@github.com/shilei-massclouds/axlog2"]
-axlog2 = { path = "./axlog2/axlog2" }
-rt_axlog2 = { path = "./axlog2/rt_axlog2" }
+# [patch."ssh://git@github.com/shilei-massclouds/axlog2"]
+# axlog2 = { path = "./axlog2/axlog2" }
+# rt_axlog2 = { path = "./axlog2/rt_axlog2" }
 
-[patch."ssh://git@github.com/shilei-massclouds/kernel_guard_base"]
-kernel_guard_base = { path = "./kernel_guard_base/kernel_guard_base" }
+# [patch."ssh://git@github.com/shilei-massclouds/kernel_guard_base"]
+# kernel_guard_base = { path = "./kernel_guard_base/kernel_guard_base" }
 
-[patch."ssh://git@github.com/shilei-massclouds/lazy_init"]
-lazy_init = { path = "./lazy_init/lazy_init" }
+# [patch."ssh://git@github.com/shilei-massclouds/lazy_init"]
+# lazy_init = { path = "./lazy_init/lazy_init" }
 
-[patch."ssh://git@github.com/shilei-massclouds/memory_addr"]
-memory_addr = { path = "./memory_addr/memory_addr" }
+# [patch."ssh://git@github.com/shilei-massclouds/memory_addr"]
+# memory_addr = { path = "./memory_addr/memory_addr" }
 
-[patch."ssh://git@github.com/shilei-massclouds/page_table"]
-page_table = { path = "./page_table/page_table" }
-page_table_entry = { path = "./page_table/page_table_entry" }
-rt_page_table = { path = "./page_table/rt_page_table" }
+# [patch."ssh://git@github.com/shilei-massclouds/page_table"]
+# page_table = { path = "./page_table/page_table" }
+# page_table_entry = { path = "./page_table/page_table_entry" }
+# rt_page_table = { path = "./page_table/rt_page_table" }
 
-[patch."ssh://git@github.com/shilei-massclouds/percpu2"]
-percpu2 = { path = "./percpu2/percpu2" }
+# [patch."ssh://git@github.com/shilei-massclouds/percpu2"]
+# percpu2 = { path = "./percpu2/percpu2" }
 
-[patch."ssh://git@github.com/shilei-massclouds/ratio"]
-ratio = { path = "./ratio/ratio" }
+# [patch."ssh://git@github.com/shilei-massclouds/ratio"]
+# ratio = { path = "./ratio/ratio" }
 
-[patch."ssh://git@github.com/shilei-massclouds/spinbase"]
-spinbase = { path = "./spinbase/spinbase" }
+# [patch."ssh://git@github.com/shilei-massclouds/spinbase"]
+# spinbase = { path = "./spinbase/spinbase" }
 
-[patch."ssh://git@github.com/shilei-massclouds/axdriver"]
-axdriver = { path = "./axdriver/axdriver" }
+# [patch."ssh://git@github.com/shilei-massclouds/axdriver"]
+# axdriver = { path = "./axdriver/axdriver" }
 
-[patch."ssh://git@github.com/shilei-massclouds/axio"]
-axio = { path = "./axio/axio" }
+# [patch."ssh://git@github.com/shilei-massclouds/axio"]
+# axio = { path = "./axio/axio" }
 
-[patch."ssh://git@github.com/shilei-massclouds/capability"]
-capability = { path = "./capability/capability" }
+# [patch."ssh://git@github.com/shilei-massclouds/capability"]
+# capability = { path = "./capability/capability" }
 
-[patch."ssh://git@github.com/shilei-massclouds/driver_block"]
-driver_block = { path = "./driver_block/driver_block" }
-rt_driver_block = { path = "./driver_block/rt_driver_block" }
+# [patch."ssh://git@github.com/shilei-massclouds/driver_block"]
+# driver_block = { path = "./driver_block/driver_block" }
+# rt_driver_block = { path = "./driver_block/rt_driver_block" }
 
-[patch."ssh://git@github.com/shilei-massclouds/driver_common"]
-driver_common = { path = "./driver_common/driver_common" }
+# [patch."ssh://git@github.com/shilei-massclouds/driver_common"]
+# driver_common = { path = "./driver_common/driver_common" }
 
-[patch."ssh://git@github.com/shilei-massclouds/elf"]
-elf = { path = "./elf/elf" }
+# [patch."ssh://git@github.com/shilei-massclouds/elf"]
+# elf = { path = "./elf/elf" }
 
-[patch."ssh://git@github.com/shilei-massclouds/handler_table"]
-handler_table = { path = "./handler_table/handler_table" }
+# [patch."ssh://git@github.com/shilei-massclouds/handler_table"]
+# handler_table = { path = "./handler_table/handler_table" }
 
-[patch."ssh://git@github.com/shilei-massclouds/scheduler"]
-scheduler = { path = "./scheduler/scheduler" }
+# [patch."ssh://git@github.com/shilei-massclouds/scheduler"]
+# scheduler = { path = "./scheduler/scheduler" }
 
-[patch."ssh://git@github.com/shilei-massclouds/taskctx"]
-taskctx = { path = "./taskctx/taskctx" }
+# [patch."ssh://git@github.com/shilei-massclouds/taskctx"]
+# taskctx = { path = "./taskctx/taskctx" }
 
-[patch."ssh://git@github.com/shilei-massclouds/axdtb".axdtb]
-path = "./axdtb/axdtb"
+# [patch."ssh://git@github.com/shilei-massclouds/axdtb".axdtb]
+# path = "./axdtb/axdtb"
 
-[patch."ssh://git@github.com/shilei-massclouds/axtrap".axtrap]
-path = "./axtrap/axtrap"
+# [patch."ssh://git@github.com/shilei-massclouds/axtrap".axtrap]
+# path = "./axtrap/axtrap"
 
-[patch."ssh://git@github.com/shilei-massclouds/axtype".axtype]
-path = "./axtype/axtype"
+# [patch."ssh://git@github.com/shilei-massclouds/axtype".axtype]
+# path = "./axtype/axtype"
 
-[patch."ssh://git@github.com/shilei-massclouds/axfs_devfs".axfs_devfs]
-path = "./axfs_devfs/axfs_devfs"
+# [patch."ssh://git@github.com/shilei-massclouds/axfs_devfs".axfs_devfs]
+# path = "./axfs_devfs/axfs_devfs"
 
-[patch."ssh://git@github.com/shilei-massclouds/axfs_ramfs".axfs_ramfs]
-path = "./axfs_ramfs/axfs_ramfs"
+# [patch."ssh://git@github.com/shilei-massclouds/axfs_ramfs".axfs_ramfs]
+# path = "./axfs_ramfs/axfs_ramfs"
 
-[patch."ssh://git@github.com/shilei-massclouds/rust_fatfs".rust_fatfs]
-path = "./rust_fatfs/rust_fatfs"
+# [patch."ssh://git@github.com/shilei-massclouds/rust_fatfs".rust_fatfs]
+# path = "./rust_fatfs/rust_fatfs"
 
-[patch."ssh://git@github.com/shilei-massclouds/axfs_vfs".axfs_vfs]
-path = "./axfs_vfs/axfs_vfs"
+# [patch."ssh://git@github.com/shilei-massclouds/axfs_vfs".axfs_vfs]
+# path = "./axfs_vfs/axfs_vfs"
 
-[patch."ssh://git@github.com/shilei-massclouds/axmount"]
-axmount = { path = "./axmount/axmount" }
-rt_axmount = { path = "./axmount/rt_axmount" }
+# [patch."ssh://git@github.com/shilei-massclouds/axmount"]
+# axmount = { path = "./axmount/axmount" }
+# rt_axmount = { path = "./axmount/rt_axmount" }
 
-[patch."ssh://git@github.com/shilei-massclouds/driver_pci".driver_pci]
-path = "./driver_pci/driver_pci"
+# [patch."ssh://git@github.com/shilei-massclouds/driver_pci".driver_pci]
+# path = "./driver_pci/driver_pci"
 
-[patch."ssh://git@github.com/shilei-massclouds/driver_virtio"]
-driver_virtio = { path = "./driver_virtio/driver_virtio" }
-rt_driver_virtio = { path = "./driver_virtio/rt_driver_virtio" }
+# [patch."ssh://git@github.com/shilei-massclouds/driver_virtio"]
+# driver_virtio = { path = "./driver_virtio/driver_virtio" }
+# rt_driver_virtio = { path = "./driver_virtio/rt_driver_virtio" }
 
-[patch."ssh://git@github.com/shilei-massclouds/axsyscall".axsyscall]
-path = "./axsyscall/axsyscall"
+# [patch."ssh://git@github.com/shilei-massclouds/axsyscall".axsyscall]
+# path = "./axsyscall/axsyscall"
 
-[patch."ssh://git@github.com/shilei-massclouds/exec"]
-exec = { path = "./exec/exec" }
-rt_exec = { path = "./exec/rt_exec" }
+# [patch."ssh://git@github.com/shilei-massclouds/exec"]
+# exec = { path = "./exec/exec" }
+# rt_exec = { path = "./exec/rt_exec" }
 
-[patch."ssh://git@github.com/shilei-massclouds/mmap".mmap]
-path = "./mmap/mmap"
+# [patch."ssh://git@github.com/shilei-massclouds/mmap".mmap]
+# path = "./mmap/mmap"
 
-[patch."ssh://git@github.com/shilei-massclouds/sys".sys]
-path = "./sys/sys"
+# [patch."ssh://git@github.com/shilei-massclouds/sys".sys]
+# path = "./sys/sys"
 
-[patch."ssh://git@github.com/shilei-massclouds/task"]
-task = { path = "./task/task" }
-rt_task = { path = "./task/rt_task" }
+# [patch."ssh://git@github.com/shilei-massclouds/task"]
+# task = { path = "./task/task" }
+# rt_task = { path = "./task/rt_task" }
 
-[patch."ssh://git@github.com/shilei-massclouds/filetable".filetable]
-path = "./filetable/filetable"
+# [patch."ssh://git@github.com/shilei-massclouds/filetable".filetable]
+# path = "./filetable/filetable"
 
-[patch."ssh://git@github.com/shilei-massclouds/fileops".fileops]
-path = "./fileops/fileops"
+# [patch."ssh://git@github.com/shilei-massclouds/fileops".fileops]
+# path = "./fileops/fileops"
 
-[patch."ssh://git@github.com/shilei-massclouds/mm"]
-mm = { path = "./mm/mm" }
-rt_mm = { path = "./mm/rt_mm" }
+# [patch."ssh://git@github.com/shilei-massclouds/mm"]
+# mm = { path = "./mm/mm" }
+# rt_mm = { path = "./mm/rt_mm" }
 
-[patch."ssh://git@github.com/shilei-massclouds/axfile".axfile]
-path = "./axfile/axfile"
+# [patch."ssh://git@github.com/shilei-massclouds/axfile".axfile]
+# path = "./axfile/axfile"
 
-[patch."ssh://git@github.com/shilei-massclouds/fstree".fstree]
-path = "./fstree/fstree"
+# [patch."ssh://git@github.com/shilei-massclouds/fstree".fstree]
+# path = "./fstree/fstree"
 
-[patch."ssh://git@github.com/shilei-massclouds/spinpreempt".spinpreempt]
-path = "./spinpreempt/spinpreempt"
+# [patch."ssh://git@github.com/shilei-massclouds/spinpreempt".spinpreempt]
+# path = "./spinpreempt/spinpreempt"
 
-[patch."ssh://git@github.com/shilei-massclouds/mutex"]
-mutex = { path = "./mutex/mutex" }
-rt_mutex = { path = "./mutex/rt_mutex" }
+# [patch."ssh://git@github.com/shilei-massclouds/mutex"]
+# mutex = { path = "./mutex/mutex" }
+# rt_mutex = { path = "./mutex/rt_mutex" }
 
-[patch."ssh://git@github.com/shilei-massclouds/signal".signal]
-path = "./signal/signal"
+# [patch."ssh://git@github.com/shilei-massclouds/signal".signal]
+# path = "./signal/signal"
 
-[patch."ssh://git@github.com/shilei-massclouds/wait_queue".wait_queue]
-path = "./wait_queue/wait_queue"
+# [patch."ssh://git@github.com/shilei-massclouds/wait_queue".wait_queue]
+# path = "./wait_queue/wait_queue"
 
-[patch."ssh://git@github.com/shilei-massclouds/run_queue".run_queue]
-path = "./run_queue/run_queue"
+# [patch."ssh://git@github.com/shilei-massclouds/run_queue".run_queue]
+# path = "./run_queue/run_queue"
 
-[patch."ssh://git@github.com/shilei-massclouds/preempt_guard".preempt_guard]
-path = "./preempt_guard/preempt_guard"
+# [patch."ssh://git@github.com/shilei-massclouds/preempt_guard".preempt_guard]
+# path = "./preempt_guard/preempt_guard"

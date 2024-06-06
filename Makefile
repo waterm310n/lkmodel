@@ -35,7 +35,7 @@ V ?=
 # App options
 A ?= early_console/rt_early_console
 APP ?= $(A)
-FEATURES ?=
+FEATURES ?= axstd
 APP_FEATURES ?=
 
 # QEMU options
