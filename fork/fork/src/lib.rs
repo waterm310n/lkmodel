@@ -263,7 +263,7 @@ impl KernelCloneArgs {
 // Todo: We should move task_entry to taskctx.
 // Now schedule_tail: 'run_queue::force_unlock();` hinders us.
 // Consider to move it to sched first!
-extern "C" fn task_entry() -> ! {
+pub extern "C" fn task_entry() -> ! {
     info!("################ task_entry ...");
     // schedule_tail
     // unlock runqueue for freshly created task

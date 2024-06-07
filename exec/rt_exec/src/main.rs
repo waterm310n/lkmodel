@@ -43,13 +43,17 @@ pub fn init(cpu_id: usize, dtb: usize) {
     axlog2::init("info");
     exec::init(cpu_id, dtb);
     axtrap::init(cpu_id, dtb);
+    let mut ctx = taskctx::current_ctx();
+    ctx.as_ctx_mut().init(None, fork::task_entry as usize, 0.into());
 }
 
 pub fn start(_cpu_id: usize, dtb: usize) {
     let filename = "/sbin/init";
     exec::kernel_execve(filename);
-    // Todo: switch to userland app
-    panic!("exec ok!");
+
+    let sp = task::current().pt_regs_addr();
+    axhal::arch::ret_from_fork(sp);
+    unreachable!();
 }
 
 #[panic_handler]

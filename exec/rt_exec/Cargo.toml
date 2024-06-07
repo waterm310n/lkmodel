@@ -17,6 +17,7 @@ axconfig = { git = "ssh://git@github.com/shilei-massclouds/axconfig.git" }
 axlog2 = { git = "ssh://git@github.com/shilei-massclouds/axlog2.git" }
 axsyscall = { git = "ssh://git@github.com/shilei-massclouds/axsyscall.git" }
 task = { git = "ssh://git@github.com/shilei-massclouds/task.git" }
+taskctx = { git = "ssh://git@github.com/shilei-massclouds/taskctx" }
 run_queue = { git = "ssh://git@github.com/shilei-massclouds/run_queue.git" }
 axdriver = { git = "ssh://git@github.com/shilei-massclouds/axdriver.git" }
 axmount = { git = "ssh://git@github.com/shilei-massclouds/axmount.git" }
