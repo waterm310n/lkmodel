@@ -6,12 +6,10 @@ extern crate alloc;
 
 use core::ptr::null;
 use core::str::from_utf8;
-use alloc::sync::Arc;
 use alloc::vec::Vec;
 use alloc::string::String;
 
 use axerrno::LinuxResult;
-use axfile::fops::OpenOptions;
 use axhal::arch::STACK_SIZE;
 use elf::abi::{PT_INTERP, PT_LOAD};
 use elf::endian::AnyEndian;
@@ -24,8 +22,6 @@ use axtype::{align_down_4k, align_up_4k, PAGE_SIZE};
 use axtype::is_aligned;
 use mmap::FileRef;
 use mmap::{MAP_ANONYMOUS, MAP_FIXED};
-use mutex::Mutex;
-use axfile::fops::File;
 use user_stack::UserStack;
 use axhal::arch::{ELF_ET_DYN_BASE, TASK_SIZE};
 use mmap::{PROT_READ, PROT_WRITE, PROT_EXEC};
@@ -43,13 +39,7 @@ pub fn execve(
 }
 
 fn do_open_execat(filename: &str, _flags: usize) -> LinuxResult<FileRef> {
-    let mut opts = OpenOptions::new();
-    opts.read(true);
-
-    let current = task::current();
-    let fs = current.fs.lock();
-    let file = File::open(filename, &opts, &fs)?;
-    Ok(Arc::new(Mutex::new(file)))
+    fileops::do_open(filename, _flags)
 }
 
 fn exec_binprm(file: FileRef, load_bias: usize, args: Vec<String>) -> LinuxResult<(usize, usize)> {

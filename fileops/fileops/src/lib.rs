@@ -9,13 +9,15 @@ use alloc::sync::Arc;
 use alloc::vec;
 
 use axerrno::AxResult;
-use axerrno::{LinuxError, linux_err, linux_err_from};
+use axerrno::{LinuxError, LinuxResult, linux_err, linux_err_from};
 use axfile::api::create_dir;
 use axfile::fops::File;
 use axfile::fops::OpenOptions;
 use mutex::Mutex;
 use axtype::get_user_str;
 use axio::SeekFrom;
+
+pub type FileRef = Arc<Mutex<File>>;
 
 // Special value used to indicate openat should use
 // the current working directory.
@@ -373,6 +375,16 @@ pub fn ftruncate(fd: usize, length: usize) -> usize {
         panic!("ftruncate err: {:?}", e);
     });
     0
+}
+
+pub fn do_open(filename: &str, _flags: usize) -> LinuxResult<FileRef> {
+    let mut opts = OpenOptions::new();
+    opts.read(true);
+
+    let current = task::current();
+    let fs = current.fs.lock();
+    let file = File::open(filename, &opts, &fs)?;
+    Ok(Arc::new(Mutex::new(file)))
 }
 
 pub fn init() {
