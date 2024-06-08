@@ -7,7 +7,7 @@ use alloc::sync::Arc;
 use alloc::{vec, vec::Vec};
 use alloc::string::String;
 use core::str::from_utf8;
-use core::{mem::align_of, mem::size_of_val, ptr::null};
+use core::ptr::null;
 
 use axerrno::LinuxResult;
 use axfile::fops::File;
@@ -30,6 +30,7 @@ use axtype::get_user_str_vec;
 use elf::abi::{PF_R, PF_W, PF_X};
 use mmap::{PROT_READ, PROT_WRITE, PROT_EXEC};
 use axtype::is_aligned;
+use user_stack::UserStack;
 
 const ELF_HEAD_BUF_SIZE: usize = 256;
 
@@ -53,44 +54,6 @@ fn setup_zero_page() -> LinuxResult {
     mmap::_mmap(0x0, PAGE_SIZE, PROT_READ, MAP_FIXED | MAP_ANONYMOUS, None, 0)?;
     Ok(())
 }
-
-//////////////////////////////////////////////
-
-struct UserStack {
-    _base: usize,
-    sp: usize,
-    ptr: usize,
-}
-
-impl UserStack {
-    pub fn new(base: usize, ptr: usize) -> Self {
-        Self {
-            _base: base,
-            sp: base,
-            ptr,
-        }
-    }
-
-    pub fn get_sp(&self) -> usize {
-        self.sp
-    }
-
-    pub fn push<T: Copy>(&mut self, data: &[T]) {
-        let origin = self.sp;
-        self.sp -= size_of_val(data);
-        self.sp -= self.sp % align_of::<T>();
-        self.ptr -= origin - self.sp;
-        unsafe { core::slice::from_raw_parts_mut(self.ptr as *mut T, data.len()) }
-            .copy_from_slice(data);
-    }
-    pub fn push_str(&mut self, str: &str) -> usize {
-        self.push(&[b'\0']);
-        self.push(str.as_bytes());
-        self.sp
-    }
-}
-
-//////////////////////////////////////////////
 
 /*
 const AT_PHDR: u8 = 3;
