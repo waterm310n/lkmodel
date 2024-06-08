@@ -17,3 +17,6 @@ axio = { git = "ssh://git@github.com/shilei-massclouds/axio.git" }
 elf = { git = "ssh://git@github.com/shilei-massclouds/elf.git" }
 fileops = { git = "ssh://git@github.com/shilei-massclouds/fileops" }
 axconfig = { git = "ssh://git@github.com/shilei-massclouds/axconfig" }
+axalloc = { git = "ssh://git@github.com/shilei-massclouds/axalloc" }
+axlog2 = { git = "ssh://git@github.com/shilei-massclouds/axlog2" }
+page_table = { git = "ssh://git@github.com/shilei-massclouds/page_table" }

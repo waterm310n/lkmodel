@@ -130,8 +130,12 @@ fn main() {
 }
 
 fn list(args: &ListArgs) -> Result<()> {
-    let tool_path = get_tool_path().unwrap();
-    let repo_path = format!("{}/tpl_files/Repo.toml", tool_path);
+    let repo_path = if local_mode() {
+        format!("./Repo.toml")
+    } else {
+        let tool_path = get_tool_path().unwrap();
+        format!("{}/tpl_files/Repo.toml", tool_path)
+    };
     let repo_toml: Table = toml::from_str(&fs::read_to_string(repo_path)?)?;
     let list_name = if let Some(ref class) = args.class {
         assert!(class == "root", "Now only support 'root'");

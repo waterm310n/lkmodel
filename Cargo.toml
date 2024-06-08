@@ -16,8 +16,8 @@ members = [
     "axmount/test_axmount",
     "driver_block/rt_driver_block",
     "driver_virtio/rt_driver_virtio",
-#"user_stack/rt_user_stack",
-#"bprm_loader/rt_bprm_loader",
+    "user_stack/rt_user_stack",
+    "bprm_loader/rt_bprm_loader",
     "axtrap/rt_axtrap",
     "macrokernel/rt_macrokernel",
 ]
@@ -34,9 +34,11 @@ rt_axconfig = { path = "./axconfig/rt_axconfig" }
 
 [patch."ssh://git@github.com/shilei-massclouds/user_stack"]
 user_stack = { path = "./user_stack/user_stack" }
+rt_user_stack = { path = "./user_stack/rt_user_stack" }
 
 [patch."ssh://git@github.com/shilei-massclouds/bprm_loader"]
 bprm_loader = { path = "./bprm_loader/bprm_loader" }
+rt_bprm_loader = { path = "./bprm_loader/rt_bprm_loader" }
 
 [patch."ssh://git@github.com/shilei-massclouds/axhal"]
 axhal = { path = "./axhal/axhal" }

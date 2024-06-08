@@ -67,5 +67,5 @@ pub fn init(cpu_id: usize, _dtb: usize) {
     page_table::init();
     axhal::platform_init();
     task::init();
-    bprm_loader::init();
+    bprm_loader::init(cpu_id, _dtb);
 }
