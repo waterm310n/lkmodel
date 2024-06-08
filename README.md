@@ -100,7 +100,7 @@ lktool dep-graph
 ```sh
 git clone git@github.com:shilei-massclouds/ltp.git
 git checkout lkmodel
-cd lkmodel
+cd ltp
 make autotools
 ./mk_riscv64.sh
 ```
