@@ -17,3 +17,4 @@ run_queue = { git = "ssh://git@github.com/shilei-massclouds/run_queue.git" }
 spinbase = { git = "ssh://git@github.com/shilei-massclouds/spinbase.git" }
 spinpreempt = { git = "ssh://git@github.com/shilei-massclouds/spinpreempt.git" }
 axconfig = { git = "ssh://git@github.com/shilei-massclouds/axconfig" }
+preempt_guard = { git = "ssh://git@github.com/shilei-massclouds/preempt_guard" }

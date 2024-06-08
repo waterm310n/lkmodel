@@ -22,7 +22,6 @@ use elf::parse::ParseAt;
 use elf::segment::ProgramHeader;
 use elf::segment::SegmentTable;
 use elf::ElfBytes;
-use preempt_guard::NoPreempt;
 use axtype::{align_down_4k, align_up_4k, PAGE_SIZE};
 use mmap::FileRef;
 use mmap::{MAP_ANONYMOUS, MAP_FIXED};
@@ -37,16 +36,15 @@ const ELF_HEAD_BUF_SIZE: usize = 256;
 pub fn kernel_execve(filename: &str) -> LinuxResult {
     info!("kernel_execve... {}", filename);
 
-    let mut task = task::current();
-    {
-        let _ = NoPreempt::new();
-        task.as_task_mut().alloc_mm();
-    }
+    task::alloc_mm();
+    let _ = setup_zero_page();
 
-    // TODO: Move it into kernel_init().
-    setup_zero_page()?;
     let args = vec![filename.into()];
-    bprm_execve(filename, 0, 0, args)
+    let (entry, sp) = bprm_execve(filename, 0, 0, args)?;
+
+    info!("start thread...");
+    start_thread(task::current().pt_regs_addr(), entry, sp);
+    Ok(())
 }
 
 #[allow(unused)]
@@ -180,7 +178,7 @@ fn get_arg_page(_entry: usize, args: Vec<String>) -> LinuxResult<usize> {
 /// sys_execve() executes a new program.
 fn bprm_execve(
     filename: &str, flags: usize, load_bias: usize, args: Vec<String>
-) -> LinuxResult {
+) -> LinuxResult<(usize, usize)> {
     info!("bprm_execve: {}", filename);
     let file = do_open_execat(filename, flags)?;
     exec_binprm(file, load_bias, args)
@@ -196,7 +194,7 @@ fn do_open_execat(filename: &str, _flags: usize) -> LinuxResult<FileRef> {
     Ok(Arc::new(Mutex::new(file)))
 }
 
-fn exec_binprm(file: FileRef, load_bias: usize, args: Vec<String>) -> LinuxResult {
+fn exec_binprm(file: FileRef, load_bias: usize, args: Vec<String>) -> LinuxResult<(usize, usize)> {
     load_elf_binary(file, load_bias, args)
 }
 
@@ -205,7 +203,7 @@ fn load_elf_interp(
     load_bias: usize,
     app_entry: usize,
     args: Vec<String>,
-) -> LinuxResult {
+) -> LinuxResult<(usize, usize)> {
     let (phdrs, entry) = load_elf_phdrs(file.clone())?;
 
     let mut elf_bss: usize = 0;
@@ -251,15 +249,12 @@ fn load_elf_interp(
 
     info!("pad bss...");
     padzero(elf_bss);
-
-    info!("start thread...");
-    start_thread(task::current().pt_regs_addr(), entry, sp);
-    Ok(())
+    Ok((entry, sp))
 }
 
 fn load_elf_binary(
     file: FileRef, load_bias: usize, mut args: Vec<String>
-) -> LinuxResult {
+) -> LinuxResult<(usize, usize)> {
     let (phdrs, entry) = load_elf_phdrs(file.clone())?;
 
     for phdr in &phdrs {
@@ -324,10 +319,7 @@ fn load_elf_binary(
     set_brk(elf_bss, elf_brk);
 
     padzero(elf_bss);
-
-    info!("start thread...");
-    start_thread(task::current().pt_regs_addr(), entry, sp);
-    Ok(())
+    Ok((entry, sp))
 }
 
 fn padzero(elf_bss: usize) {
@@ -402,19 +394,14 @@ pub fn execve(path: &str, argv: usize, envp: usize) -> usize {
     }
     assert_eq!(envp.len(), 0);
 
-    let mut task = task::current();
-    {
-        let _ = NoPreempt::new();
-        task.as_task_mut().alloc_mm();
-    }
+    task::alloc_mm();
 
     // TODO: Move it into kernel_init().
     let _ = setup_zero_page();
+    let (entry, sp) = bprm_execve(path, 0, 0, args).expect("exec error!");
 
-    match bprm_execve(path, 0, 0, args) {
-        Ok(_) => info!("bprm_execve ok!"),
-        Err(e) => panic!("bprm_execve: {:?}", e),
-    }
+    info!("start thread...");
+    start_thread(task::current().pt_regs_addr(), entry, sp);
     0
 }
 

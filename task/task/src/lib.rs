@@ -23,6 +23,7 @@ use spinpreempt::SpinLock;
 use fstree::FsStruct;
 use filetable::FileTable;
 use wait_queue::WaitQueue;
+use preempt_guard::NoPreempt;
 
 pub use crate::tid_map::{register_task, unregister_task, get_task};
 pub use taskctx::Tid;
@@ -273,6 +274,12 @@ pub fn yield_now() {
 pub fn activate(task: TaskRef) {
     let rq = run_queue::task_rq(&task.sched_info);
     rq.lock().activate_task(task.sched_info.clone());
+}
+
+pub fn alloc_mm() {
+    let _ = NoPreempt::new();
+    let mut task = current();
+    task.as_task_mut().alloc_mm();
 }
 
 pub fn init() {
