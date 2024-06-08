@@ -1,0 +1,19 @@
+[package]
+name = "bprm_loader"
+version = "0.1.0"
+edition = "2021"
+
+[dependencies]
+log = "0.4"
+user_stack = { git = "ssh://git@github.com/shilei-massclouds/user_stack" }
+axhal = { git = "ssh://git@github.com/shilei-massclouds/axhal.git" }
+axtype = { git = "ssh://git@github.com/shilei-massclouds/axtype.git" }
+task = { git = "ssh://git@github.com/shilei-massclouds/task.git" }
+mmap = { git = "ssh://git@github.com/shilei-massclouds/mmap.git" }
+mutex = { git = "ssh://git@github.com/shilei-massclouds/mutex.git" }
+axfile = { git = "ssh://git@github.com/shilei-massclouds/axfile.git" }
+axerrno = { git = "ssh://git@github.com/shilei-massclouds/axerrno.git" }
+axio = { git = "ssh://git@github.com/shilei-massclouds/axio.git" }
+elf = { git = "ssh://git@github.com/shilei-massclouds/elf.git" }
+fileops = { git = "ssh://git@github.com/shilei-massclouds/fileops" }
+axconfig = { git = "ssh://git@github.com/shilei-massclouds/axconfig" }

@@ -39,4 +39,5 @@ impl UserStack {
 }
 
 pub fn init() {
+    axconfig::init_once!();
 }
