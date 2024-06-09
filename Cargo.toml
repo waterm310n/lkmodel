@@ -21,6 +21,7 @@ members = [
     "axtrap/rt_axtrap",
     "fileops/rt_fileops",
     "mmap/rt_mmap",
+    "fstree/rt_fstree",
     "macrokernel/rt_macrokernel",
 ]
 
@@ -190,8 +191,9 @@ rt_mm = { path = "./mm/rt_mm" }
 [patch."ssh://git@github.com/shilei-massclouds/axfile".axfile]
 path = "./axfile/axfile"
 
-[patch."ssh://git@github.com/shilei-massclouds/fstree".fstree]
-path = "./fstree/fstree"
+[patch."ssh://git@github.com/shilei-massclouds/fstree"]
+fstree = { path = "./fstree/fstree" }
+rt_fstree = { path = "./fstree/rt_fstree" }
 
 [patch."ssh://git@github.com/shilei-massclouds/spinpreempt".spinpreempt]
 path = "./spinpreempt/spinpreempt"
