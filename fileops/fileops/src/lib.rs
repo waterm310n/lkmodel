@@ -387,10 +387,15 @@ pub fn do_open(filename: &str, _flags: usize) -> LinuxResult<FileRef> {
     Ok(Arc::new(Mutex::new(file)))
 }
 
-pub fn init() {
+pub fn init(cpu_id: usize, _dtb: usize) {
     axconfig::init_once!();
     info!("Initialize file ops ...");
 
+    axlog2::init(option_env!("AX_LOG").unwrap_or(""));
+    axhal::arch_init_early(cpu_id);
+    axalloc::init();
+    page_table::init();
+    axhal::platform_init();
     task::init();
 
     let all_devices = axdriver::init_drivers();

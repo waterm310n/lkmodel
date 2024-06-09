@@ -19,6 +19,7 @@ members = [
     "user_stack/rt_user_stack",
     "bprm_loader/rt_bprm_loader",
     "axtrap/rt_axtrap",
+    "fileops/rt_fileops",
     "macrokernel/rt_macrokernel",
 ]
 
@@ -176,8 +177,9 @@ rt_task = { path = "./task/rt_task" }
 [patch."ssh://git@github.com/shilei-massclouds/filetable".filetable]
 path = "./filetable/filetable"
 
-[patch."ssh://git@github.com/shilei-massclouds/fileops".fileops]
-path = "./fileops/fileops"
+[patch."ssh://git@github.com/shilei-massclouds/fileops"]
+fileops = { path = "./fileops/fileops" }
+rt_fileops = { path = "./fileops/rt_fileops" }
 
 [patch."ssh://git@github.com/shilei-massclouds/mm"]
 mm = { path = "./mm/mm" }

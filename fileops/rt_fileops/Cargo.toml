@@ -1,0 +1,13 @@
+[package]
+name = "rt_fileops"
+version = "0.1.0"
+edition = "2021"
+
+# See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
+
+[dependencies]
+arch_boot = { git = "ssh://git@github.com/shilei-massclouds/arch_boot" }
+fileops = { git = "ssh://git@github.com/shilei-massclouds/fileops" }
+axlog2 = { git = "ssh://git@github.com/shilei-massclouds/axlog2" }
+axhal = { git = "ssh://git@github.com/shilei-massclouds/axhal" }
+axtype = { git = "ssh://git@github.com/shilei-massclouds/axtype" }
