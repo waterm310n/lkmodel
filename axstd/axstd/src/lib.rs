@@ -3,15 +3,16 @@
 #![feature(doc_cfg)]
 #![feature(doc_auto_cfg)]
 
-// #[macro_use]
-// mod macros;
+#[macro_use]
+mod macros;
 
-// pub mod io;
-pub use axlog2::ax_print as print;
-pub use axlog2::ax_println as println;
+#[cfg(feature = "alloc")]
+extern crate alloc;
 
-use core::panic::PanicInfo;
-#[panic_handler]
-pub fn panic(info: &PanicInfo) -> ! {
-    arch_boot::panic(info)
-}
+#[cfg(feature = "alloc")]
+#[doc(no_inline)]
+pub use alloc::{boxed, collections, format, string, vec};
+
+pub use axruntime::rust_main;
+
+pub mod io;

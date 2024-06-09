@@ -1,0 +1,15 @@
+[package]
+name = "axruntime"
+version = "0.1.0"
+edition = "2021"
+
+[features]
+
+alloc = [] # 默认使用tlsf分配器
+# paging = ["axhal/paging", "lazy_init"]
+
+[dependencies]
+arch_boot = { git = "ssh://git@github.com/shilei-massclouds/arch_boot.git" }
+axlog = { package = "axlog2" ,git = "ssh://git@github.com/shilei-massclouds/axlog2.git" }
+axhal = { git = "ssh://git@github.com/shilei-massclouds/axhal" }
+axalloc = { git = "ssh://git@github.com/shilei-massclouds/axalloc" }

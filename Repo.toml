@@ -70,6 +70,7 @@ fork = "fork"
 # Styles are just as [mod_list]
 [root_list]
 rt_helloworld = "app_helloworld" # 在此处添加不会被lktool list打印，但是可以被chroot使用
+rt_memtest = "app_memtest"
 rt_early_console = "early_console"
 #rt_earlycon = "earlycon"
 #rt_ramdisk = "ramdisk"

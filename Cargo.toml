@@ -16,7 +16,7 @@ members = [
     "driver_block/rt_driver_block",
     "driver_virtio/rt_driver_virtio",
     "macrokernel/rt_macrokernel", "axstd/axstd",
-    "app_helloworld/rt_helloworld",
+    "app_helloworld/rt_helloworld", "axstd/axruntime", "app_memtest/rt_memtest",
 ]
 
 [profile.release]
