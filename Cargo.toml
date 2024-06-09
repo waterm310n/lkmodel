@@ -20,6 +20,7 @@ members = [
     "bprm_loader/rt_bprm_loader",
     "axtrap/rt_axtrap",
     "fileops/rt_fileops",
+    "mmap/rt_mmap",
     "macrokernel/rt_macrokernel",
 ]
 
@@ -164,8 +165,9 @@ path = "./axsyscall/axsyscall"
 exec = { path = "./exec/exec" }
 rt_exec = { path = "./exec/rt_exec" }
 
-[patch."ssh://git@github.com/shilei-massclouds/mmap".mmap]
-path = "./mmap/mmap"
+[patch."ssh://git@github.com/shilei-massclouds/mmap"]
+mmap = { path = "./mmap/mmap" }
+rt_mmap = { path = "./mmap/rt_mmap" }
 
 [patch."ssh://git@github.com/shilei-massclouds/sys".sys]
 path = "./sys/sys"
