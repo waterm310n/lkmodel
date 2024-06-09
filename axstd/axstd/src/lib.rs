@@ -13,6 +13,9 @@ extern crate alloc;
 #[doc(no_inline)]
 pub use alloc::{boxed, collections, format, string, vec};
 
+#[doc(no_inline)]
+pub use core::{arch, cell, cmp, hint, marker, mem, ops, ptr, slice, str};
+
 pub use axruntime::rust_main;
 
 pub mod io;
