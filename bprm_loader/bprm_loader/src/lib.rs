@@ -327,7 +327,7 @@ fn get_arg_page(_entry: usize, args: Vec<String>) -> LinuxResult<usize> {
     Ok(sp)
 }
 
-pub fn init(cpu_id: usize, _dtb: usize) {
+pub fn init(cpu_id: usize, dtb_pa: usize) {
     axconfig::init_once!();
 
     axlog2::init(option_env!("AX_LOG").unwrap_or(""));
@@ -337,5 +337,5 @@ pub fn init(cpu_id: usize, _dtb: usize) {
     axhal::platform_init();
     task::init();
     user_stack::init();
-    fileops::init();
+    fileops::init(cpu_id, dtb_pa);
 }

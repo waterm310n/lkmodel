@@ -7,6 +7,11 @@ edition = "2021"
 
 [dependencies]
 log = "0.4"
+axhal = { git = "ssh://git@github.com/shilei-massclouds/axhal" }
 axfs_vfs = { git = "ssh://git@github.com/shilei-massclouds/axfs_vfs.git" }
 axerrno = { git = "ssh://git@github.com/shilei-massclouds/axerrno.git" }
 spinpreempt = { git = "ssh://git@github.com/shilei-massclouds/spinpreempt.git" }
+axalloc = { git = "ssh://git@github.com/shilei-massclouds/axalloc" }
+page_table = { git = "ssh://git@github.com/shilei-massclouds/page_table" }
+axdriver = { git = "ssh://git@github.com/shilei-massclouds/axdriver" }
+axmount = { git = "ssh://git@github.com/shilei-massclouds/axmount" }

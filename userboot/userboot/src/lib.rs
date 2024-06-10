@@ -11,7 +11,7 @@ use axhal::mem::phys_to_virt;
 use axtype::DtbInfo;
 use fork::{user_mode_thread, CloneFlags};
 
-pub fn init(cpu_id: usize, _dtb: usize) {
+pub fn init(cpu_id: usize, dtb_pa: usize) {
     axconfig::init_once!();
 
     axlog2::init(option_env!("AX_LOG").unwrap_or(""));
@@ -20,7 +20,7 @@ pub fn init(cpu_id: usize, _dtb: usize) {
     page_table::init();
     axhal::platform_init();
     task::init();
-    fileops::init();
+    fileops::init(cpu_id, dtb_pa);
 }
 
 /// start_kernel

@@ -1,26 +1,23 @@
 #![no_std]
 #![no_main]
 
-use core::panic::PanicInfo;
-use mm::{MmStruct, VmAreaStruct};
-
 #[macro_use]
-extern crate axlog2;
+extern crate log;
+extern crate alloc;
+
+use alloc::string::ToString;
+use core::panic::PanicInfo;
+use fstree::FsStruct;
 
 #[no_mangle]
-pub extern "Rust" fn runtime_main(cpu_id: usize, _dtb_pa: usize) {
+pub extern "Rust" fn runtime_main(cpu_id: usize, dtb_pa: usize) {
     axlog2::init("debug");
     info!("[rt_fstree]: ...");
 
-    axhal::arch_init_early(cpu_id);
-    axalloc::init();
-    page_table::init();
+    let fs = fstree::init(cpu_id, dtb_pa);
 
-    let mut mm = MmStruct::new();
-
-    let va = 0;
-    let vma = VmAreaStruct::new(va, 4096, 0, None, 0);
-    mm.vmas.insert(va, vma);
+    let cwd = fs.lock().current_dir().unwrap_or("No CWD!".to_string());
+    info!("cwd: {}", cwd);
 
     info!("[rt_fstree]: ok!");
     axhal::misc::terminate();

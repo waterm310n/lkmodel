@@ -12,7 +12,7 @@ use axdriver::{prelude::*, AxDeviceContainer};
 use alloc::sync::Arc;
 use lazy_init::LazyInit;
 use axfs_vfs::VfsOps;
-use fstree::RootDirectory;
+use axfs_vfs::RootDirectory;
 
 cfg_if::cfg_if! {
     if #[cfg(feature = "myfs")] { // override the default filesystem
