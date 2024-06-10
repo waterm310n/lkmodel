@@ -288,8 +288,11 @@ fn chroot(args: &RootArgs) -> Result<()> {
     };
 
     // Todo: check that target mod actually exists in root_list.
-    let new = new_root.trim_end_matches('/');
-    assert!(new.starts_with("rt_") || new.starts_with("test_"));
+    let mut new = new_root.trim_end_matches('/').to_owned();
+    if !(new.starts_with("rt_") || new.starts_with("test_")) {
+        new = format!("rt_{}", new);
+        println!("Use {} as root.", new);
+    }
 
     if !local_mode() {
         _put(old)?;
