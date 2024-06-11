@@ -43,7 +43,7 @@ enum Commands {
     /// Check patched modules status
     Status,
     /// Test all subsystems
-    Test,
+    Test(RootArgs),
     /// Change root of the project
     Chroot(RootArgs),
 }
@@ -124,8 +124,8 @@ fn main() {
         Commands::Status => {
             status()
         },
-        Commands::Test => {
-            test()
+        Commands::Test(args) => {
+            test(args)
         },
         Commands::Chroot(args) => {
             chroot(args)
@@ -175,10 +175,19 @@ fn status() -> Result<()> {
     Ok(())
 }
 
-fn test() -> Result<()> {
+fn test(args: &RootArgs) -> Result<()> {
     use colored::*;
-
     assert!(local_mode());
+
+    if let Some(name) = &args.root {
+        if test_one(name)? {
+            println!("\n{}: {}!", name, "passed".green());
+        } else {
+            println!("\n{}: {}!", name, "failed".red());
+        }
+        return Ok(());
+    }
+
     let repo_toml: Table = toml::from_str(&fs::read_to_string("./Repo.toml")?)?;
 
     let list = repo_toml.get("root_list").unwrap();

@@ -45,7 +45,7 @@ mod structs;
 
 pub mod path;
 
-use alloc::{string::String, sync::Arc, vec::Vec};
+use alloc::{sync::Arc, vec::Vec};
 use axerrno::{ax_err, AxError, AxResult};
 
 pub use self::structs::{FileSystemInfo, VfsDirEntry, VfsNodeAttr, VfsNodePerm, VfsNodeType};

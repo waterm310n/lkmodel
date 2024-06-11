@@ -5,11 +5,10 @@ extern crate log;
 extern crate alloc;
 
 use axerrno::{ax_err, AxError, AxResult};
-use alloc::{string::String, sync::Arc, vec::Vec};
-use axfs_vfs::{VfsNodeAttr, VfsNodeOps, VfsNodeRef, VfsNodeType, VfsOps, VfsResult};
+use alloc::{string::String, sync::Arc};
+use axfs_vfs::{VfsNodeRef, VfsNodeType};
 use spinpreempt::SpinLock;
 use axfs_vfs::RootDirectory;
-use axfs_vfs::MountPoint;
 
 pub struct FsStruct {
     pub users: i32,
