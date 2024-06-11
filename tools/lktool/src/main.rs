@@ -179,10 +179,11 @@ fn test() -> Result<()> {
     use colored::*;
 
     assert!(local_mode());
-    let repo_toml: Table = toml::from_str(&fs::read_to_string("./Repo1.toml")?)?;
+    let repo_toml: Table = toml::from_str(&fs::read_to_string("./Repo.toml")?)?;
 
     let list = repo_toml.get("root_list").unwrap();
 
+    let mut failures = vec![];
     let mut passed = 0;
     let mut failed = 0;
     for name in list.as_table().unwrap().keys() {
@@ -193,6 +194,7 @@ fn test() -> Result<()> {
         } else {
             println!("\n{}: {}!", name, "failed".red());
             failed += 1;
+            failures.push(name);
         }
     }
 
@@ -205,6 +207,9 @@ fn test() -> Result<()> {
     println!("  Total : {}", passed+failed);
     println!();
     println!("================");
+    if failures.len() > 0 {
+        println!("Failed tests: {:?}", failures);
+    }
     Ok(())
 }
 
@@ -219,7 +224,15 @@ fn test_one(name: &str) -> Result<bool> {
 
 fn verify(name: &str) -> Result<bool> {
     let output = fs::read_to_string(OUTPUT_LOG)?;
-    let pattern = format!("\n[{}]: ok!", name);
+    let pattern;
+
+    let root = default_root().expect("Please set root by 'chroot'.");
+    let path = format!("{}/expect_output", root);
+    if let Ok(p) = fs::read_to_string(path) {
+        pattern = p.trim().to_owned();
+    } else {
+        pattern = format!("[{}]: ok!", name);
+    }
     Ok(output.contains(&pattern))
 }
 

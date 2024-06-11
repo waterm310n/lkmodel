@@ -11,6 +11,7 @@ pub extern "Rust" fn runtime_main(_cpu_id: usize, _dtb_pa: usize) {
     axlog2::init("debug");
     info!("[rt_axlog2]: ...");
     info!("[rt_axlog2]: ok!");
+    axhal::misc::terminate();
 }
 
 #[panic_handler]
