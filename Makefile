@@ -51,6 +51,7 @@ NET_DEV ?= user
 INIT_CMD ?=
 GLOBAL_CFG ?=
 LTP ?= /tmp
+DUMP_OUTPUT ?= n
 
 # Network options
 IP ?= 10.0.2.15

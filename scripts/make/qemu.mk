@@ -77,6 +77,8 @@ else
   qemu_args-$(ACCEL) += -cpu host -accel kvm
 endif
 
+qemu_args-$(DUMP_OUTPUT) += 1>/tmp/output.log
+
 ifeq ($(PLATFORM_NAME), um)
   define run_qemu
     @printf "    $(CYAN_C)Running$(END_C) on host...\n"

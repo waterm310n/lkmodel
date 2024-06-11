@@ -10,6 +10,7 @@ const DEFAULT_ARCH: &str = "riscv64";
 const ROOT_FILE: &str = ".root";
 const BTP_URL: &str = "git@github.com:shilei-massclouds/btp.git";
 const LOCAL_MODE: &str = ".local_mode";
+const OUTPUT_LOG: &str = "/tmp/output.log";
 
 #[derive(Parser)]
 #[command(version, about, long_about = None)]
@@ -41,6 +42,8 @@ enum Commands {
     DepGraph,
     /// Check patched modules status
     Status,
+    /// Test all subsystems
+    Test,
     /// Change root of the project
     Chroot(RootArgs),
 }
@@ -107,7 +110,7 @@ fn main() {
             build()
         },
         Commands::Run(args) => {
-            run(args)
+            run(args, false)
         },
         Commands::Get(args) => {
             get(args)
@@ -120,6 +123,9 @@ fn main() {
         },
         Commands::Status => {
             status()
+        },
+        Commands::Test => {
+            test()
         },
         Commands::Chroot(args) => {
             chroot(args)
@@ -169,6 +175,54 @@ fn status() -> Result<()> {
     Ok(())
 }
 
+fn test() -> Result<()> {
+    use colored::*;
+
+    assert!(local_mode());
+    let repo_toml: Table = toml::from_str(&fs::read_to_string("./Repo1.toml")?)?;
+
+    let list = repo_toml.get("root_list").unwrap();
+
+    let mut passed = 0;
+    let mut failed = 0;
+    for name in list.as_table().unwrap().keys() {
+        println!("\n{}: ...\n", name);
+        if test_one(name)? {
+            println!("\n{}: {}!", name, "passed".green());
+            passed += 1;
+        } else {
+            println!("\n{}: {}!", name, "failed".red());
+            failed += 1;
+        }
+    }
+
+    println!("\n");
+    println!("Summary for tests:");
+    println!("================");
+    println!();
+    println!("  Passed: {}", passed);
+    println!("  Failed: {}", failed);
+    println!("  Total : {}", passed+failed);
+    println!();
+    println!("================");
+    Ok(())
+}
+
+fn test_one(name: &str) -> Result<bool> {
+    let arg = RootArgs { root: Some(name.to_owned()) };
+    chroot(&arg)?;
+    prepare()?;
+    let arg = RunArgs { process: None };
+    run(&arg, true)?;
+    verify(name)
+}
+
+fn verify(name: &str) -> Result<bool> {
+    let output = fs::read_to_string(OUTPUT_LOG)?;
+    let pattern = format!("\n[{}]: ok!", name);
+    Ok(output.contains(&pattern))
+}
+
 fn build() -> Result<()> {
     let root = default_root().expect("Please set root by 'chroot'.");
     let arch = default_arch();
@@ -185,7 +239,7 @@ fn build() -> Result<()> {
     Ok(())
 }
 
-fn run(args: &RunArgs) -> Result<()> {
+fn run(args: &RunArgs, dump: bool) -> Result<()> {
     let root = default_root().expect("Please set root by 'chroot'.");
     let arch = default_arch();
     let conf = parse_conf()?;
@@ -193,12 +247,14 @@ fn run(args: &RunArgs) -> Result<()> {
     let global_cfg = _global_cfg(&conf);
     let default_init = String::from("/sbin/init");
     let init_cmd = args.process.as_ref().unwrap_or(&default_init);
+    let dump = if dump { "y" } else { "n" };
     let mut child = process::Command::new("make")
         .arg(format!("A={}", root))
         .arg(format!("ARCH={}", arch))
         .arg(format!("BLK={}", has_blk))
         .arg(format!("GLOBAL_CFG={}", global_cfg))
         .arg(format!("INIT_CMD={}", init_cmd))
+        .arg(format!("DUMP_OUTPUT={}", dump))
         .arg("run")
         .spawn()?;
     child.wait()?;
