@@ -46,7 +46,8 @@ pub extern "Rust" fn runtime_main(_cpu_id: usize, _dtb_pa: usize) {
 
     let sp = stack.get_sp();
 
-    info!("[rt_user_stack]: sp {:#X} ok!", sp);
+    info!("[rt_user_stack]: sp {:#X}", sp);
+    info!("[rt_user_stack]: ok!");
     axhal::misc::terminate();
 }
 

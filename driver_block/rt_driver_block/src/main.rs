@@ -45,6 +45,7 @@ pub extern "Rust" fn runtime_main(_cpu_id: usize, _dtb_pa: usize) {
     assert!(buf[0..4] == *b"0123");
 
     info!("[rt_ramdisk]: ok!");
+    info!("[rt_driver_block]: ok!");
     axhal::misc::terminate();
 }
 
