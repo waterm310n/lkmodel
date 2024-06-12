@@ -11,3 +11,4 @@ axhal = { git = "ssh://git@github.com/shilei-massclouds/axhal" }
 spinbase = { git = "ssh://git@github.com/shilei-massclouds/spinbase" }
 memory_addr = { git = "ssh://git@github.com/shilei-massclouds/memory_addr" }
 page_table = { git = "ssh://git@github.com/shilei-massclouds/page_table" }
+lazy_init = { git = "ssh://git@github.com/shilei-massclouds/lazy_init" }

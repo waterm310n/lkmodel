@@ -345,11 +345,11 @@ pub fn set_tid_address(tidptr: usize) -> usize {
     0
 }
 
-pub fn init(cpu_id: usize, _dtb: usize) {
+pub fn init(cpu_id: usize, dtb_pa: usize) {
     axconfig::init_once!();
 
     axlog2::init(option_env!("AX_LOG").unwrap_or(""));
     axhal::arch_init_early(cpu_id);
     axalloc::init();
-    task::init();
+    task::init(cpu_id, dtb_pa);
 }

@@ -279,8 +279,11 @@ fn run(args: &RunArgs, dump: bool) -> Result<()> {
         .arg(format!("DUMP_OUTPUT={}", dump))
         .arg("run")
         .spawn()?;
-    child.wait()?;
-    Ok(())
+    if child.wait_with_output()?.status.success() {
+        Ok(())
+    } else {
+        Err(anyhow!("build failed!"))
+    }
 }
 
 fn _global_cfg(conf: &BTreeMap<String, String>) -> String {

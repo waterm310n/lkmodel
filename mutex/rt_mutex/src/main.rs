@@ -13,7 +13,7 @@ use mutex::Mutex;
 
 /// Entry
 #[no_mangle]
-pub extern "Rust" fn runtime_main(cpu_id: usize, _dtb_pa: usize) {
+pub extern "Rust" fn runtime_main(cpu_id: usize, dtb_pa: usize) {
     axhal::cpu::init_primary(cpu_id);
 
     axlog2::init("debug");
@@ -23,13 +23,15 @@ pub extern "Rust" fn runtime_main(cpu_id: usize, _dtb_pa: usize) {
     let end = align_down_4k(axconfig::PHYS_MEMORY_END);
     axalloc::global_init(phys_to_virt(start), end - start);
 
+    /*
     let ctx = Arc::new(taskctx::init_sched_info());
     unsafe {
         let ptr = Arc::into_raw(ctx.clone());
         axhal::cpu::set_current_task_ptr(ptr);
     }
+    */
 
-    task::init();
+    task::init(cpu_id, dtb_pa);
 
     {
         let mutex: Mutex<u32> = Mutex::new(0);

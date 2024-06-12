@@ -58,7 +58,7 @@ pub fn execve(path: &str, argv: usize, envp: usize) -> usize {
     0
 }
 
-pub fn init(cpu_id: usize, _dtb: usize) {
+pub fn init(cpu_id: usize, dtb_pa: usize) {
     axconfig::init_once!();
 
     axlog2::init(option_env!("AX_LOG").unwrap_or(""));
@@ -66,6 +66,6 @@ pub fn init(cpu_id: usize, _dtb: usize) {
     axalloc::init();
     page_table::init();
     axhal::platform_init();
-    task::init();
-    bprm_loader::init(cpu_id, _dtb);
+    task::init(cpu_id, dtb_pa);
+    bprm_loader::init(cpu_id, dtb_pa);
 }

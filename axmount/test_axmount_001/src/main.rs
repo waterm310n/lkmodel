@@ -12,7 +12,7 @@ use fstree::FsStruct;
 
 /// Entry
 #[no_mangle]
-pub extern "Rust" fn runtime_main(cpu_id: usize, dtb_pa: usize) {
+pub extern "Rust" fn runtime_main(cpu_id: usize, _dtb_pa: usize) {
     assert_eq!(cpu_id, 0);
 
     axlog2::init("debug");
@@ -26,17 +26,14 @@ pub extern "Rust" fn runtime_main(cpu_id: usize, dtb_pa: usize) {
     info!("Initialize kernel page table...");
     page_table::init();
 
-    /*
     let ctx = Arc::new(taskctx::init_sched_info());
     unsafe {
         let ptr = Arc::into_raw(ctx.clone());
         axhal::cpu::set_current_task_ptr(ptr);
     }
-    */
 
     // Init runq just for using mutex.
-    task::init(cpu_id, dtb_pa);
-    //taskctx::init(cpu_id, dtb_pa);
+    task::init();
 
     {
         //let mut disk = ramdisk::RamDisk::new(0x10000);

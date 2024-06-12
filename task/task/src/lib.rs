@@ -112,7 +112,7 @@ impl TaskStruct {
             filetable: filetable::init_files(),
             sigpending: SpinLock::new(SigPending::new()),
             sighand: Arc::new(SpinLock::new(SigHand::new())),
-            sched_info: taskctx::init_sched_info(),
+            sched_info: taskctx::init_thread(),
 
             exit_state: AtomicUsize::new(0),
             exit_code: AtomicU32::new(0),
@@ -232,11 +232,13 @@ impl CurrentTask {
         }
     }
 
+    /*
     pub(crate) unsafe fn init_current(init_task: TaskRef) {
         info!("CurrentTask::init_current...");
         let ptr = Arc::into_raw(init_task.sched_info.clone());
         axhal::cpu::set_current_task_ptr(ptr);
     }
+    */
 
     pub unsafe fn set_current(prev: Self, next: TaskRef) {
         info!("CurrentTask::set_current...");
@@ -282,9 +284,12 @@ pub fn alloc_mm() {
     task.as_task_mut().alloc_mm();
 }
 
-pub fn init() {
+pub fn init(cpu_id: usize, dtb_pa: usize) {
     axconfig::init_once!();
     info!("Initialize schedule system ...");
+
+    taskctx::init(cpu_id, dtb_pa);
+    run_queue::init(taskctx::init_thread().clone());
 
     let init_task = TaskStruct::new();
     init_task.set_state(TaskState::Running);
@@ -292,6 +297,5 @@ pub fn init() {
     let tid = alloc_tid();
     assert_eq!(tid, 0);
     register_task(init_task.clone());
-    unsafe { CurrentTask::init_current(init_task.clone()) }
-    run_queue::init(init_task.sched_info.clone());
+    //unsafe { CurrentTask::init_current(init_task.clone()) }
 }

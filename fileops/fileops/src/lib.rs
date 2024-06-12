@@ -387,7 +387,7 @@ pub fn do_open(filename: &str, _flags: usize) -> LinuxResult<FileRef> {
     Ok(Arc::new(Mutex::new(file)))
 }
 
-pub fn init(cpu_id: usize, _dtb: usize) {
+pub fn init(cpu_id: usize, dtb_pa: usize) {
     axconfig::init_once!();
     info!("Initialize file ops ...");
 
@@ -396,7 +396,7 @@ pub fn init(cpu_id: usize, _dtb: usize) {
     axalloc::init();
     page_table::init();
     axhal::platform_init();
-    task::init();
+    task::init(cpu_id, dtb_pa);
 
     let all_devices = axdriver::init_drivers();
     let root_dir = axmount::init(all_devices.block);

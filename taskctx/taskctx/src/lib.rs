@@ -19,6 +19,7 @@ use memory_addr::{align_up_4k, align_down, PAGE_SIZE_4K};
 use spinbase::SpinNoIrq;
 use axhal::arch::write_page_table_root0;
 use page_table::paging::PageTable;
+use lazy_init::LazyInit;
 
 pub const THREAD_SIZE: usize = 32 * PAGE_SIZE_4K;
 
@@ -327,6 +328,24 @@ pub fn switch_mm(prev_mm_id: usize, next_mm_id: usize, next_pgd: Arc<SpinNoIrq<P
     }
 }
 
+/*
 pub fn init_sched_info() -> Arc<SchedInfo> {
     Arc::new(SchedInfo::new())
+}
+*/
+
+static INIT_THREAD: LazyInit<CtxRef> = LazyInit::new();
+
+pub fn init(cpu_id: usize, dtb_pa: usize) {
+    let ctx = Arc::new(SchedInfo::new());
+    INIT_THREAD.init_by(ctx);
+
+    let ptr = Arc::into_raw(INIT_THREAD.clone());
+    unsafe {
+        axhal::cpu::set_current_task_ptr(ptr);
+    }
+}
+
+pub fn init_thread() -> Arc<SchedInfo> {
+    INIT_THREAD.clone()
 }

@@ -335,7 +335,7 @@ pub fn init(cpu_id: usize, dtb_pa: usize) {
     axalloc::init();
     page_table::init();
     axhal::platform_init();
-    task::init();
+    task::init(cpu_id, dtb_pa);
     user_stack::init();
     fileops::init(cpu_id, dtb_pa);
 }
