@@ -18,7 +18,9 @@ use axhal::arch::TASK_SIZE;
 use mm::{VM_READ, VM_WRITE, VM_EXEC, VM_SHARED};
 #[cfg(target_arch = "riscv64")]
 use axhal::arch::{EXC_INST_PAGE_FAULT, EXC_LOAD_PAGE_FAULT, EXC_STORE_PAGE_FAULT};
+#[cfg(target_arch = "riscv64")]
 use task::SIGSEGV;
+#[cfg(target_arch = "riscv64")]
 use signal::force_sig_fault;
 
 pub const PROT_READ: usize = 0x1;
@@ -257,6 +259,7 @@ pub fn get_unmapped_vma(_va: usize, len: usize) -> usize {
 }
 
 // invalid permissions for mapped object
+#[cfg(target_arch = "riscv64")]
 const SEGV_ACCERR: usize = 2;
 
 pub fn faultin_page(va: usize, cause: usize) -> usize {
@@ -357,6 +360,7 @@ fn access_error(cause: usize, vma: &VmAreaStruct) -> bool {
     }
 }
 
+#[cfg(target_arch = "riscv64")]
 fn bad_area(code: usize, addr: usize) {
     // User mode accesses just cause a SIGSEGV
     // Todo: makesure now we are in userland.
@@ -365,6 +369,7 @@ fn bad_area(code: usize, addr: usize) {
     do_trap(SIGSEGV, code, addr);
 }
 
+#[cfg(target_arch = "riscv64")]
 fn do_trap(signo: usize, code: usize, addr: usize) {
     force_sig_fault(signo, code, addr);
 }

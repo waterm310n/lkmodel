@@ -7,6 +7,7 @@ extern crate axlog2;
 extern crate alloc;
 
 use axerrno::{LinuxError, LinuxResult};
+#[cfg(target_arch = "riscv64")]
 use axhal::mem::phys_to_virt;
 use axtype::DtbInfo;
 use fork::{user_mode_thread, CloneFlags};

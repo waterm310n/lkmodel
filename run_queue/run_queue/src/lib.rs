@@ -1,14 +1,12 @@
 #![no_std]
 
 use taskctx::CtxRef;
-use taskctx::SchedInfo;
 use crate::run_queue::RUN_QUEUE;
 use spinbase::SpinNoIrq;
 
 #[macro_use]
 extern crate log;
 extern crate alloc;
-use alloc::sync::Arc;
 
 mod run_queue;
 pub use run_queue::AxRunQueue;
