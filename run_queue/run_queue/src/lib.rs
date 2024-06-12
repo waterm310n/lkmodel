@@ -13,7 +13,12 @@ use alloc::sync::Arc;
 mod run_queue;
 pub use run_queue::AxRunQueue;
 
-pub fn init(idle: Arc<SchedInfo>) {
+pub fn init(cpu_id: usize, dtb_pa: usize) {
+    axconfig::init_once!();
+
+    taskctx::init(cpu_id, dtb_pa);
+
+    let idle = taskctx::init_thread();
     RUN_QUEUE.init_by(AxRunQueue::new(idle));
 }
 

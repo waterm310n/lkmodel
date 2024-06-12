@@ -337,6 +337,8 @@ pub fn init_sched_info() -> Arc<SchedInfo> {
 static INIT_THREAD: LazyInit<CtxRef> = LazyInit::new();
 
 pub fn init(cpu_id: usize, dtb_pa: usize) {
+    axconfig::init_once!();
+
     let ctx = Arc::new(SchedInfo::new());
     INIT_THREAD.init_by(ctx);
 
