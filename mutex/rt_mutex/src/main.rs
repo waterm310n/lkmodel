@@ -23,15 +23,7 @@ pub extern "Rust" fn runtime_main(cpu_id: usize, dtb_pa: usize) {
     let end = align_down_4k(axconfig::PHYS_MEMORY_END);
     axalloc::global_init(phys_to_virt(start), end - start);
 
-    /*
-    let ctx = Arc::new(taskctx::init_sched_info());
-    unsafe {
-        let ptr = Arc::into_raw(ctx.clone());
-        axhal::cpu::set_current_task_ptr(ptr);
-    }
-    */
-
-    task::init(cpu_id, dtb_pa);
+    run_queue::init(cpu_id, dtb_pa);
 
     {
         let mutex: Mutex<u32> = Mutex::new(0);

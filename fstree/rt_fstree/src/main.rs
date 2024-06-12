@@ -14,8 +14,9 @@ pub extern "Rust" fn runtime_main(cpu_id: usize, dtb_pa: usize) {
     axlog2::init("debug");
     info!("[rt_fstree]: ...");
 
-    let fs = fstree::init(cpu_id, dtb_pa);
+    fstree::init(cpu_id, dtb_pa);
 
+    let fs = fstree::init_fs();
     let cwd = fs.lock().current_dir().unwrap_or("No CWD!".to_string());
     info!("cwd: {}", cwd);
 

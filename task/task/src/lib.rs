@@ -288,7 +288,8 @@ pub fn init(cpu_id: usize, dtb_pa: usize) {
     axconfig::init_once!();
     info!("Initialize schedule system ...");
 
-    run_queue::init(cpu_id, dtb_pa);
+    //run_queue::init(cpu_id, dtb_pa);
+    fstree::init(cpu_id, dtb_pa);
 
     let init_task = TaskStruct::new();
     init_task.set_state(TaskState::Running);

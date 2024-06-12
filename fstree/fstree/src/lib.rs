@@ -9,6 +9,7 @@ use alloc::{string::String, sync::Arc};
 use axfs_vfs::{VfsNodeRef, VfsNodeType};
 use spinpreempt::SpinLock;
 use axfs_vfs::RootDirectory;
+use lazy_init::LazyInit;
 
 pub struct FsStruct {
     pub users: i32,
@@ -169,18 +170,25 @@ impl FsStruct {
 }
 
 pub fn init_fs() -> Arc<SpinLock<FsStruct>> {
-    Arc::new(SpinLock::new(FsStruct::new()))
+    INIT_FS.clone()
 }
 
-pub fn init(cpu_id: usize, _dtb_pa: usize) -> Arc<SpinLock<FsStruct>> {
+pub fn init(cpu_id: usize, dtb_pa: usize) {
+    axconfig::init_once!();
+    info!("Initialize fstree ...");
+
     axhal::arch_init_early(cpu_id);
     axalloc::init();
     page_table::init();
 
+    spinpreempt::init(cpu_id, dtb_pa);
+
+    axmount::init(cpu_id, dtb_pa);
+    let root_dir = axmount::init_root();
     let mut fs = FsStruct::new();
-    let all_devices = axdriver::init_drivers();
-    let root_dir = axmount::init(all_devices.block);
     fs.init(root_dir);
 
-    Arc::new(SpinLock::new(fs))
+    INIT_FS.init_by(Arc::new(SpinLock::new(fs)));
 }
+
+static INIT_FS: LazyInit<Arc<SpinLock<FsStruct>>> = LazyInit::new();

@@ -15,3 +15,5 @@ axalloc = { git = "ssh://git@github.com/shilei-massclouds/axalloc" }
 page_table = { git = "ssh://git@github.com/shilei-massclouds/page_table" }
 axdriver = { git = "ssh://git@github.com/shilei-massclouds/axdriver" }
 axmount = { git = "ssh://git@github.com/shilei-massclouds/axmount" }
+axconfig = { git = "ssh://git@github.com/shilei-massclouds/axconfig" }
+lazy_init = { git = "ssh://git@github.com/shilei-massclouds/lazy_init" }

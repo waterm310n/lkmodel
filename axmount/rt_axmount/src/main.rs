@@ -35,11 +35,13 @@ pub extern "Rust" fn runtime_main(cpu_id: usize, dtb_pa: usize) {
     */
 
     // Init runq just for using mutex.
-    task::init(cpu_id, dtb_pa);
+    //task::init(cpu_id, dtb_pa);
     //taskctx::init(cpu_id, dtb_pa);
+    //run_queue::init(cpu_id, dtb_pa);
 
     {
         //let mut disk = ramdisk::RamDisk::new(0x10000);
+        /*
         let mut alldevs = axdriver::init_drivers();
         let disk = alldevs.block.take_one().unwrap();
         let disk = AxDeviceContainer::from_one(disk);
@@ -48,7 +50,11 @@ pub extern "Rust" fn runtime_main(cpu_id: usize, dtb_pa: usize) {
         let root_dir = axmount::init_rootfs(main_fs);
         let mut fs = FsStruct::new();
         fs.init(root_dir);
-        match axfile::api::create_dir("/testcases", &fs) {
+        */
+        fstree::init(cpu_id, dtb_pa);
+        let fs = fstree::init_fs();
+        let locked_fs = fs.lock();
+        match axfile::api::create_dir("/testcases", &locked_fs) {
             Ok(_) => info!("create /testcases ok!"),
             Err(e) => error!("create /testcases failed {}", e),
         }
@@ -57,9 +63,9 @@ pub extern "Rust" fn runtime_main(cpu_id: usize, dtb_pa: usize) {
         info!("test create file {:?}:", fname);
         //assert_err!(axfile::api::metadata(fname), NotFound);
         let contents = "create a new file!\n";
-        axfile::api::write(fname, contents, &fs).unwrap();
+        axfile::api::write(fname, contents, &locked_fs).unwrap();
 
-        let ret = axfile::api::read_to_string(fname, &fs).unwrap();
+        let ret = axfile::api::read_to_string(fname, &locked_fs).unwrap();
         info!("read test file: \"{}\"", ret);
     }
 

@@ -38,7 +38,7 @@ pub extern "Rust" fn runtime_main(cpu_id: usize, _dtb_pa: usize) {
     info!("Initialize kernel page table...");
     page_table::init();
 
-    let mut alldevs = axdriver::init_drivers();
+    let mut alldevs = axdriver::init_drivers2();
     let mut disk = alldevs.block.take_one().unwrap();
 
     assert_eq!(disk.device_type(), DeviceType::Block);

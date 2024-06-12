@@ -177,3 +177,8 @@ mod imp {
         }
     }
 }
+
+pub fn init(cpu_id: usize, dtb_pa: usize) {
+    axconfig::init_once!();
+    run_queue::init(cpu_id, dtb_pa);
+}

@@ -24,3 +24,8 @@ pub type SpinLock<T> = BaseSpinLock<NoPreemptIrqSave, T>;
 
 /// A guard that provides mutable data access for [`SpinNoIrq`].
 pub type SpinLockGuard<'a, T> = BaseSpinLockGuard<'a, NoPreemptIrqSave, T>;
+
+pub fn init(cpu_id: usize, dtb_pa: usize) {
+    axconfig::init_once!();
+    preempt_guard::init(cpu_id, dtb_pa);
+}

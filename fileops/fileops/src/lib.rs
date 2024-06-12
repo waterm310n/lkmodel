@@ -398,7 +398,9 @@ pub fn init(cpu_id: usize, dtb_pa: usize) {
     axhal::platform_init();
     task::init(cpu_id, dtb_pa);
 
-    let all_devices = axdriver::init_drivers();
-    let root_dir = axmount::init(all_devices.block);
+    /*
+    axmount::init(cpu_id, dtb_pa);
+    let root_dir = axmount::init_root();
     task::current().fs.lock().init(root_dir);
+    */
 }

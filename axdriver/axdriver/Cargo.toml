@@ -43,3 +43,4 @@ driver_virtio = { git = "ssh://git@github.com/shilei-massclouds/driver_virtio.gi
 axalloc = { git = "ssh://git@github.com/shilei-massclouds/axalloc.git" }
 axhal = { git = "ssh://git@github.com/shilei-massclouds/axhal.git" }
 axconfig = { git = "ssh://git@github.com/shilei-massclouds/axconfig.git" }
+lazy_init = { git = "ssh://git@github.com/shilei-massclouds/lazy_init" }

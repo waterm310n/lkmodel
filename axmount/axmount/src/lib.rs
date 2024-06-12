@@ -77,7 +77,16 @@ pub fn init_rootfs(main_fs: Arc<dyn VfsOps>) -> Arc<RootDirectory> {
     Arc::new(root_dir)
 }
 
-pub fn init(blk_devs: AxDeviceContainer<AxBlockDevice>) -> Arc<RootDirectory> {
-    let main_fs = init_filesystems(blk_devs, false);
-    init_rootfs(main_fs)
+pub fn init(cpu_id: usize, dtb_pa: usize) {
+    axconfig::init_once!();
+
+    let all_devices = axdriver::init_drivers2();
+    let main_fs = init_filesystems(all_devices.block, false);
+    INIT_ROOT.init_by(init_rootfs(main_fs));
 }
+
+pub fn init_root() -> Arc<RootDirectory> {
+    INIT_ROOT.clone()
+}
+
+static INIT_ROOT: LazyInit<Arc<RootDirectory>> = LazyInit::new();
