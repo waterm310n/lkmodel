@@ -73,6 +73,9 @@ pub struct MmStruct {
 
     // Todo: temprarily record mapped (va, pa)
     pub mapped: BTreeMap<usize, usize>,
+
+    /// Pages that have PG_mlocked set
+    pub locked_vm: usize,
 }
 
 impl MmStruct {
@@ -85,6 +88,7 @@ impl MmStruct {
 
             // Todo: temprarily record mapped (va, pa)
             mapped: BTreeMap::new(),
+            locked_vm: 0,
         }
     }
 
@@ -128,6 +132,7 @@ impl MmStruct {
             brk: self.brk,
 
             mapped,
+            locked_vm: self.locked_vm,
         }
     }
 

@@ -182,6 +182,10 @@ pub fn _mmap(
     let vma = VmAreaStruct::new(va, va + len, offset >> PAGE_SHIFT, file, vm_flags);
     mm.lock().vmas.insert(va, vma);
 
+    if (flags & MAP_LOCKED) != 0 {
+        mm.lock().locked_vm = len >> PAGE_SHIFT;
+    }
+
     Ok(va)
 }
 

@@ -179,6 +179,15 @@ fn perm_to_cap(perm: FilePerm) -> Cap {
 }
 
 impl File {
+    pub fn new(node: VfsNodeRef, cap: Cap) -> Self {
+        Self {
+            node: WithCap::new(node, cap),
+            is_append: false,
+            offset: 0,
+            shared_map: BTreeMap::new(),
+        }
+    }
+
     fn _open_at(dir: Option<&VfsNodeRef>, path: &str, opts: &OpenOptions, fs: &FsStruct) -> AxResult<Self> {
         debug!("open file: {} {:?}", path, opts);
         if !opts.is_valid() {

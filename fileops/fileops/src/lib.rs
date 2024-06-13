@@ -8,8 +8,11 @@ use alloc::string::String;
 use alloc::sync::Arc;
 use alloc::vec;
 
+mod proc_ops;
+
 use axerrno::AxResult;
 use axerrno::{LinuxError, LinuxResult, linux_err, linux_err_from};
+use axerrno::AxError::NotFound;
 use axfile::api::create_dir;
 use axfile::fops::File;
 use axfile::fops::OpenOptions;
@@ -49,7 +52,21 @@ pub fn openat(dfd: usize, filename: &str, flags: usize, mode: usize) -> AxResult
 
     let path = handle_path(dfd, filename);
     info!("openat path {}", path);
-    File::open(&path, &opts, &fs)
+    File::open(&path, &opts, &fs).or_else(|e| {
+        if e == NotFound {
+            // Handle special filesystem, e.g., procfs, sysfs ..
+            special_open(&path, &opts)
+        } else {
+            Err(e)
+        }
+    })
+}
+
+pub fn special_open(path: &str, opts: &OpenOptions) -> AxResult<File> {
+    if path.starts_with("/proc") {
+        return proc_ops::open(path, opts);
+    }
+    Err(NotFound)
 }
 
 pub fn register_file(file: AxResult<File>) -> usize {
