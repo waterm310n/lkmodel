@@ -115,3 +115,9 @@ make autotools
 [ltp]
 path = "/home/cloud/gitWork/ltp"
 ```
+
+### 自底向上逐级测试
+
+```sh
+lktool test
+```
