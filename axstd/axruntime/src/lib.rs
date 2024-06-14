@@ -65,7 +65,7 @@ fn remap_kernel_memory() -> Result<(), axhal::paging::PagingError> {
 }
 
 #[cfg_attr(not(test), no_mangle)]
-pub extern "C" fn rust_main(cpu_id: usize, dtb: usize) -> () {
+pub extern "C" fn runtime_main(cpu_id: usize, dtb: usize) -> () {
     ax_println!(
         "\
         arch = {}\n\

@@ -6,10 +6,10 @@ unsafe extern "C" fn rust_entry(cpu_id: usize, dtb: usize) {
     // We need to enable sum only when necessary.
     riscv::register::sstatus::set_sum();
     
-    rust_main(cpu_id, dtb);
+    runtime_main(cpu_id, dtb);
 }
 
 extern "Rust" {
 
-    fn rust_main(cpu_id: usize, dtb: usize);
+    fn runtime_main(cpu_id: usize, dtb: usize);
 }
