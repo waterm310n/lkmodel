@@ -1,13 +1,13 @@
 # lkmodel
 LK model components.
 
-### Fork&&Clone lkmodel，并切换分支dev
+### Fork&&Clone lkmodel，并切换分支
 
 Fork lkmodel到自己的github账号，Clone到本地。
 首先编译工具lktool。
 
 ```sh
-git checkout dev
+git checkout tutorial
 cd tools/lktool
 cargo build
 cd ../..
