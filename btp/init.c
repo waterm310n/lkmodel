@@ -21,6 +21,6 @@ int main()
         seed += ax_sqrt(1048577+i);
     }
     unsigned long ret = ax_sqrt(seed);
-    printf("Hello, Init! Sqrt(1048577) = %lu \n", ret);
+    printf("[userland]: Hello, Init! Sqrt(1048577) = %lu \n", ret);
     return 0;
 }
