@@ -116,7 +116,17 @@ make autotools
 path = "/home/cloud/gitWork/ltp"
 ```
 
+3. 基于宏内核macrokernel，运行ltp用例。
+
+```sh
+lk chroot rt_macrokernel
+lk prepare
+lk run /testcases/mmap001
+```
+
 ### 自底向上逐级测试
+
+从小规模系统开始，向上逐级测试。(暂时没有包含ltp)
 
 ```sh
 lktool test
