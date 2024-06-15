@@ -16,8 +16,9 @@ qemu_args-x86_64 := \
 
 qemu_args-riscv64 := \
   -machine virt \
-  -bios default \
+  -bios ~/opensbi/build/platform/generic/firmware/fw_jump.bin  \
   -kernel $(OUT_BIN)
+  # -bios default 
 
 qemu_args-aarch64 := \
   -cpu cortex-a72 \
