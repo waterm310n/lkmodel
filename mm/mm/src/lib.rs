@@ -33,6 +33,7 @@ pub const VM_READ: usize =   0x00000001;
 pub const VM_WRITE: usize =  0x00000002;
 pub const VM_EXEC: usize =   0x00000004;
 pub const VM_SHARED: usize = 0x00000008;
+pub const VM_MAYSHARE: usize = 0x00000080;
 
 #[derive(Clone)]
 pub struct VmAreaStruct {

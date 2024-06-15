@@ -9,8 +9,11 @@ use axfs_vfs::VfsNodePerm;
 use axfs_vfs::VfsResult;
 use axfs_vfs::VfsNodeType;
 use axerrno::AxResult;
+use axerrno::AxError::NotFound;
 use axfile::fops::File;
 use crate::OpenOptions;
+use mm::{VM_READ, VM_WRITE, VM_EXEC, VM_MAYSHARE};
+use core::cmp::min;
 
 struct ProcNode {
     path: String,
@@ -39,15 +42,57 @@ impl VfsNodeOps for ProcNode {
                 let locked_mm = mm.lock();
                 let src = format!("VmLck:         {} kB\n\0",
                     locked_mm.locked_vm << 2);
-                buf[offset..src.len()].copy_from_slice(src.as_bytes());
+                let src = src.as_bytes();
+                let src = &src[offset..];
+                buf[..src.len()].copy_from_slice(src);
                 return Ok(buf.len());
+            },
+            "/proc/self/maps" => {
+                handle_maps(offset, buf)
             },
             _ => unimplemented!("openat path {}", self.path),
         }
     }
 }
 
+fn handle_maps(offset: usize, buf: &mut [u8]) -> VfsResult<usize> {
+    let mm = task::current().mm();
+    let locked_mm = mm.lock();
+
+    let mut src = String::from("");
+    locked_mm.vmas.values().for_each(|vma| {
+        let r = if (vma.vm_flags & VM_READ) != 0 { "r" } else { "-" };
+        let w = if (vma.vm_flags & VM_WRITE) != 0 { "w" } else { "-" };
+        let x = if (vma.vm_flags & VM_EXEC) != 0 { "x" } else { "-" };
+        let s = if (vma.vm_flags & VM_MAYSHARE) != 0 { "s" } else { "p" };
+        let flags = format!("{}{}{}{}", r, w, x, s);
+
+        src += format!("{:x}-{:x} {} {:x} 00:00 0 []\n",
+                vma.vm_start, vma.vm_end,
+                flags,
+                vma.vm_pgoff,
+            ).as_str();
+    });
+
+    let src = src.as_bytes();
+    if offset >= src.len() {
+        return Ok(0);
+    }
+    let src = &src[offset..];
+    error!("offset: {} {}", offset, buf.len());
+    let min_size = min(src.len() - offset, buf.len());
+    buf[..min_size].copy_from_slice(&src[..min_size]);
+    return Ok(buf.len());
+}
+
 pub fn open(path: &str, opts: &OpenOptions) -> AxResult<File> {
+    if path == "/proc/stat" {
+        return Err(NotFound);
+    }
+    if path.ends_with("oom_score_adj") {
+        return Err(NotFound);
+    }
+
     // Todo: handle self and [pid]
     let node = Arc::new(ProcNode::new(String::from(path)));
     Ok(File::new(node, opts.into()))

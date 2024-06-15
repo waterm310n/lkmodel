@@ -15,7 +15,7 @@ pub use mm::FileRef;
 use mm::VmAreaStruct;
 use axerrno::LinuxError;
 use axhal::arch::TASK_SIZE;
-use mm::{VM_READ, VM_WRITE, VM_EXEC, VM_SHARED};
+use mm::{VM_READ, VM_WRITE, VM_EXEC, VM_SHARED, VM_MAYSHARE};
 #[cfg(target_arch = "riscv64")]
 use axhal::arch::{EXC_INST_PAGE_FAULT, EXC_LOAD_PAGE_FAULT, EXC_STORE_PAGE_FAULT};
 #[cfg(target_arch = "riscv64")]
@@ -170,7 +170,7 @@ pub fn _mmap(
 
     let mut vm_flags = calc_vm_prot_bits(prot);
     if (flags & MAP_SHARED) != 0 {
-        vm_flags |= VM_SHARED;
+        vm_flags |= VM_SHARED | VM_MAYSHARE;
     }
     info!(
         "mmap region: {:#X} - {:#X}, vm_flags: {:#X}, prot {:#X}",
@@ -472,8 +472,14 @@ pub fn munmap(va: usize, mut len: usize) -> usize {
     len = align_up_4k(len);
     debug!("munmap {:#X} - {:#X}", va, va + len);
 
-    if let Some(mut overlap) = find_overlap(va, len) {
+    while let Some(mut overlap) = find_overlap(va, len) {
         debug!("find overlap {:#X}-{:#X}", overlap.vm_start, overlap.vm_end);
+        if va <= overlap.vm_start && overlap.vm_end <= va + len {
+            let len = overlap.vm_end - overlap.vm_start;
+            let _ = remove_region(overlap.vm_start, len);
+            continue;
+        }
+
         assert!(
             overlap.vm_start <= va && va + len <= overlap.vm_end,
             "{:#X}-{:#X}; overlap {:#X}-{:#X}",
@@ -496,8 +502,13 @@ pub fn munmap(va: usize, mut len: usize) -> usize {
             let mm = task::current().mm();
             mm.lock().vmas.insert(overlap.vm_start, overlap);
         }
+        let _ = remove_region(va, len);
     }
 
+    0
+}
+
+fn remove_region(va: usize, len: usize) -> usize {
     let mm = task::current().mm();
     let mut locked_mm = mm.lock();
     // Todo: handle temporary mmaped.
