@@ -50,9 +50,36 @@ impl VfsNodeOps for ProcNode {
             "/proc/self/maps" => {
                 handle_maps(offset, buf)
             },
+            "/proc/self/pagemap" => {
+                handle_pagemap(offset, buf)
+            },
             _ => unimplemented!("openat path {}", self.path),
         }
     }
+}
+
+fn handle_pagemap(offset: usize, buf: &mut [u8]) -> VfsResult<usize> {
+    assert!(buf.len() == 8);
+    let va = (offset >> 3) << 12;
+
+    let mm = task::current().mm();
+    let locked_mm = mm.lock();
+    if locked_mm.mapped.get(&va).is_some() {
+        // Todo: fill pagemap with:
+        // Bits 0-54  page frame number (PFN) if present
+        // Bits 0-4   swap type if swapped
+        // Bits 5-54  swap offset if swapped
+        // Bit  55    pte is soft-dirty
+        // Bit  56    page exclusively mapped
+        // Bit  57    pte is uffd-wp write-protected
+        // Bits 58-60 zero
+        // Bit  61    page is file-page or shared-anon
+        // Bit  62    page swapped
+        // Bit  63    page present
+        let pm: u64 = 1 << 63;
+        buf.copy_from_slice(&pm.to_le_bytes());
+    }
+    Ok(buf.len())
 }
 
 fn handle_maps(offset: usize, buf: &mut [u8]) -> VfsResult<usize> {

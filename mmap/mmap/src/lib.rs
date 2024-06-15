@@ -110,7 +110,19 @@ pub fn mmap(
     if len == 0 {
         return Err(LinuxError::EINVAL);
     }
-    _mmap(va, len, prot, flags, file, offset)
+    let va = _mmap(va, len, prot, flags, file, offset)?;
+
+    if (flags & MAP_POPULATE) != 0 {
+        assert!(is_aligned_4k(va));
+        assert!(is_aligned_4k(len));
+        error!("MAP_POPULATE");
+        let mut pos = 0;
+        while pos < len {
+            faultin_page(va + pos, 0);
+            pos += PAGE_SIZE_4K;
+        }
+    }
+    Ok(va)
 }
 
 pub fn _mmap(
