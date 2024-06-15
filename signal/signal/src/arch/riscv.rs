@@ -1,7 +1,9 @@
 use axhal::arch::{TrapFrame, local_flush_icache_all};
 use axtype::align_down;
-use crate::{RTSigFrame, KSignal, SIGFRAME_SIZE};
+use crate::{RTSigFrame, KSignal, SIGFRAME_SIZE, SA_RESTART};
 use crate::{setup_sigcontext, restore_sigcontext};
+
+const ERESTARTSYS: isize = 512;
 
 pub fn rt_sigreturn() -> usize {
     info!("sigreturn ...");
@@ -31,9 +33,17 @@ fn get_sigframe(tf: &TrapFrame) -> usize {
     align_down(sp, 16)
 }
 
-pub fn handle_signal(ksig: &KSignal, tf: &mut TrapFrame) {
+pub fn handle_signal(ksig: &KSignal, tf: &mut TrapFrame, cause: usize) {
+    const EXC_SYSCALL: usize = 8;
     extern "C" {
         fn __user_rt_sigreturn();
+    }
+    if cause == EXC_SYSCALL {
+        if tf.regs.a0 == (-ERESTARTSYS) as usize {
+            if (ksig.action.flags & SA_RESTART) != 0 {
+                tf.sepc -= 4;
+            }
+        }
     }
 
     let frame_addr = get_sigframe(tf);

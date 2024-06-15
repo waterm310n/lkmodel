@@ -122,7 +122,6 @@ pub fn rt_sigaction(sig: usize, act: usize, oact: usize, sigsetsize: usize) -> u
     if act != 0 {
         let act = unsafe { &(*(act as *const SigAction)) };
         info!("act: {:#X} {:#X} {:#X}", act.handler, act.flags, act.mask);
-        assert!((act.flags & SA_RESTART) != 0);
         assert!((act.flags & SA_RESTORER) == 0);
 
         let mut kact = act.clone();
@@ -133,11 +132,11 @@ pub fn rt_sigaction(sig: usize, act: usize, oact: usize, sigsetsize: usize) -> u
     0
 }
 
-pub fn do_signal(tf: &mut TrapFrame) {
+pub fn do_signal(tf: &mut TrapFrame, cause: usize) {
     info!("do_signal ...");
     if let Some(ksig) = get_signal() {
         /* Actually deliver the signal */
-        arch::handle_signal(&ksig, tf);
+        arch::handle_signal(&ksig, tf, cause);
         return;
     }
 

@@ -8,6 +8,8 @@ use preempt_guard::NoPreempt;
 
 axhal::include_asm_marcos!();
 
+const EXC_SYSCALL: usize = 8;
+
 core::arch::global_asm!(
     include_str!("trap.S"),
     trapframe_size = const TRAPFRAME_SIZE,
@@ -53,7 +55,7 @@ pub fn riscv_trap_handler(tf: &mut TrapFrame, _from_user: bool) {
 fn handle_page_fault(badaddr: usize, cause: usize, tf: &mut TrapFrame) {
     debug!("handle_page_fault... cause {}", cause);
     mmap::faultin_page(badaddr, cause);
-    signal::do_signal(tf);
+    signal::do_signal(tf, cause);
 }
 
 /// Call the external IRQ handler.
@@ -72,7 +74,7 @@ fn handle_breakpoint(sepc: &mut usize) {
 fn handle_linux_syscall(tf: &mut TrapFrame) {
     debug!("handle_linux_syscall");
     syscall(tf, axsyscall::do_syscall);
-    signal::do_signal(tf);
+    signal::do_signal(tf, EXC_SYSCALL);
 }
 
 fn syscall_args(tf: &TrapFrame) -> SyscallArgs {
