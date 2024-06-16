@@ -358,7 +358,7 @@ fn access_error(cause: usize, vma: &VmAreaStruct) -> bool {
     if cause == 0 {
         return false;
     }
-    info!("cause {} flags {:#X}", cause, vma.vm_flags);
+    debug!("cause {} flags {:#X}", cause, vma.vm_flags);
     match cause {
         EXC_INST_PAGE_FAULT => {
             (vma.vm_flags & VM_EXEC) == 0

@@ -56,7 +56,7 @@ struct KSignal {
 //#define SI_FROMKERNEL(siptr)    ((siptr)->si_code > 0)
 
 pub fn kill(tid: Tid, sig: usize) -> usize {
-    info!("kill tid {} sig {}", tid, sig);
+    debug!("kill tid {} sig {}", tid, sig);
     assert!(tid > 0);
     let info = prepare_kill_siginfo(sig, tid);
     kill_proc_info(sig, info, tid).unwrap();
@@ -86,7 +86,7 @@ fn do_send_sig_info(sig: usize, info: SigInfo, tid: Tid) -> LinuxResult {
     let mut pending = task.sigpending.lock();
     pending.list.push(info);
     sigaddset(&mut pending.signal, sig);
-    info!("do_send_sig_info tid {} sig {} ok!", tid, sig);
+    debug!("do_send_sig_info tid {} sig {} ok!", tid, sig);
     Ok(())
 }
 
@@ -107,7 +107,7 @@ fn sigdelsetmask(set: &mut usize, mask: usize) {
 
 pub fn rt_sigaction(sig: usize, act: usize, oact: usize, sigsetsize: usize) -> usize {
     assert_eq!(sigsetsize, 8);
-    info!("rt_sigaction: sig {} act {:#X} oact {:#X}", sig, act, oact);
+    debug!("rt_sigaction: sig {} act {:#X} oact {:#X}", sig, act, oact);
     assert!(act != 0);
 
     let task = task::current();
@@ -121,19 +121,19 @@ pub fn rt_sigaction(sig: usize, act: usize, oact: usize, sigsetsize: usize) -> u
 
     if act != 0 {
         let act = unsafe { &(*(act as *const SigAction)) };
-        info!("act: {:#X} {:#X} {:#X}", act.handler, act.flags, act.mask);
+        debug!("act: {:#X} {:#X} {:#X}", act.handler, act.flags, act.mask);
         assert!((act.flags & SA_RESTORER) == 0);
 
         let mut kact = act.clone();
         sigdelsetmask(&mut kact.mask, sigmask(SIGKILL) | sigmask(SIGSTOP));
-        info!("get_signal signo {} handler {:#X}", sig, kact.handler);
+        debug!("get_signal signo {} handler {:#X}", sig, kact.handler);
         task.sighand.lock().action[sig - 1] = kact;
     }
     0
 }
 
 pub fn do_signal(tf: &mut TrapFrame, cause: usize) {
-    info!("do_signal ...");
+    debug!("do_signal ...");
     if let Some(ksig) = get_signal() {
         /* Actually deliver the signal */
         arch::handle_signal(&ksig, tf, cause);
@@ -150,7 +150,7 @@ fn get_signal() -> Option<KSignal> {
 
     let action = task.sighand.lock().action[signo - 1];
     assert!(action.handler != 0);
-    info!("get_signal signo {} handler {:#X}", signo, action.handler);
+    debug!("get_signal signo {} handler {:#X}", signo, action.handler);
     Some(KSignal {action, _info, signo})
 }
 
@@ -173,6 +173,6 @@ pub fn force_sig_fault(signo: usize, code: usize, _addr: usize) {
         tid: tid,
     };
 
-    info!("force tid {} sig {}", tid, signo);
+    debug!("force tid {} sig {}", tid, signo);
     do_send_sig_info(signo, info, tid).unwrap();
 }
