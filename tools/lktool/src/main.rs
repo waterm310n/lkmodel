@@ -196,6 +196,11 @@ fn test(args: &RootArgs) -> Result<()> {
     let mut passed = 0;
     let mut failed = 0;
     for name in list.as_table().unwrap().keys() {
+        if name == "rt_axconfig" {
+            // Skip rt_axconfig
+            continue;
+        }
+
         println!("\n{}: ...\n", name);
         if test_one(name)? {
             println!("\n{}: {}!", name, "passed".green());
@@ -270,7 +275,7 @@ fn run(args: &RunArgs, dump: bool) -> Result<()> {
     let default_init = String::from("/sbin/init");
     let init_cmd = args.process.as_ref().unwrap_or(&default_init);
     let dump = if dump { "y" } else { "n" };
-    let mut child = process::Command::new("make")
+    let child = process::Command::new("make")
         .arg(format!("A={}", root))
         .arg(format!("ARCH={}", arch))
         .arg(format!("BLK={}", has_blk))

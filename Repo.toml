@@ -70,7 +70,7 @@ userboot = "userboot"
 # Root components list
 # Styles are just as [mod_list]
 [root_list]
-#rt_axconfig = "axconfig"
+rt_axconfig = "axconfig"
 rt_early_console = "early_console"
 rt_axlog2 = "axlog2"
 rt_axhal = "axhal"
