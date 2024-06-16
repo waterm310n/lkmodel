@@ -252,13 +252,13 @@ fn wait_task_zombie(tid: Tid, status: &mut u32) -> Option<Tid> {
 
 /// Exits the current task.
 pub fn exit(exit_code: u32) -> ! {
-    info!("task {} exit ...", taskctx::current_ctx().tid());
+    error!("task {} exit [{}] ...", taskctx::current_ctx().tid(), exit_code);
     do_exit(exit_code)
 }
 
 /// Exits the current task group.
 pub fn exit_group(exit_code: u32) -> ! {
-    info!("exit_group ... [{}]", exit_code);
+    error!("exit_group ... [{}]", exit_code);
     do_exit(exit_code)
 }
 

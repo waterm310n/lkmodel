@@ -43,13 +43,16 @@ define riscv64_install_apps
   @sudo mount $(1) ./mnt
   @sudo mkdir -p ./mnt/lib
   @sudo mkdir -p ./mnt/testcases
+  @sudo mkdir -p ./mnt/opt
   @sudo cp /usr/riscv64-linux-gnu/lib/ld-linux-riscv64-lp64d.so.1 ./mnt/lib/
   @sudo cp /usr/riscv64-linux-gnu/lib/libc.so.6 ./mnt/lib/
   @sudo cp -r ./btp/build/riscv64/sbin ./mnt/
+  @sudo cp ./btp/syscalls ./mnt/opt/
   -@sudo cp -f $(LTP)/build_riscv64/testcases/bin/mmap[[:digit:]]* ./mnt/testcases/
   ls -l ./mnt/lib
   ls -l ./mnt/sbin
   ls -l ./mnt/testcases
+  ls -l ./mnt/opt
   @sudo umount ./mnt
   @rm -rf mnt
 endef
