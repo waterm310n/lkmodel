@@ -173,21 +173,24 @@ fn write_to_stdio(ubuf: &[u8]) -> usize {
 }
 
 fn read_from_stdio(ubuf: &mut [u8]) -> usize {
-    //axhal::console::read_bytes(ubuf)
-    // Block until at least one byte is read.
-    let read_len = axhal::console::read_bytes(ubuf);
-    if ubuf.is_empty() || read_len > 0 {
-        return read_len;
-    }
+    assert!(ubuf.len() > 0);
 
-    // try again until we got something
-    loop {
-        let read_len = axhal::console::read_bytes(ubuf);
-        if read_len > 0 {
-            return read_len;
+    // try until we got something
+    let mut index = 0;
+    while index < ubuf.len() {
+        if let Some(c) = axhal::console::getchar() {
+            let c = if c == b'\r' { b'\n' } else { c };
+            axhal::console::putchar(c);
+            ubuf[index] = c;
+            index += 1;
+            if c == b'\n' {
+                break;
+            }
+        } else {
+            task::yield_now();
         }
-        task::yield_now();
     }
+    index
 }
 
 #[derive(Debug)]
@@ -435,7 +438,11 @@ pub fn do_open(filename: &str, _flags: usize) -> LinuxResult<FileRef> {
 }
 
 pub fn fcntl(fd: usize, cmd: usize, udata: usize) -> usize {
-    assert_eq!(F_DUPFD, cmd);
+    //assert_eq!(F_DUPFD, cmd);
+    if cmd != F_DUPFD {
+        warn!("implement fcntl cmd [{}]", cmd);
+        return 0;
+    }
 
     let cur = task::current();
     let mut locked_fdt = cur.filetable.lock();

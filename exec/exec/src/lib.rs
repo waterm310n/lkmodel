@@ -45,7 +45,7 @@ pub fn execve(path: &str, argv: usize, envp: usize) -> usize {
     for env in &envp {
         info!("env: {}", env);
     }
-    assert_eq!(envp.len(), 0);
+    assert!(envp.len() <= 1);
 
     task::alloc_mm();
 
