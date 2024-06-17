@@ -16,6 +16,7 @@ qemu_args-x86_64 := \
 
 qemu_args-riscv64 := \
   -machine virt \
+  -drive if=pflash,file=$(CURDIR)/payload/apps.bin,format=raw,unit=1 \
   -bios ~/opensbi/build/platform/generic/firmware/fw_jump.bin  \
   -kernel $(OUT_BIN)
   # -bios default 

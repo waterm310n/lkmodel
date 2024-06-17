@@ -10,59 +10,9 @@ extern "Rust" {
     fn main();
 }
 
-#[cfg(feature = "alloc")]
-fn init_allocator() {
-    use axhal::mem::{memory_regions, phys_to_virt, MemRegionFlags};
+use core::sync::atomic::{AtomicUsize, Ordering};
 
-    info!("Initialize global memory allocator...");
-    info!("  use {} allocator.", axalloc::global_allocator().name());
-
-    let mut max_region_size = 0;
-    let mut max_region_paddr = 0.into();
-    for r in memory_regions() {
-        if r.flags.contains(MemRegionFlags::FREE) && r.size > max_region_size {
-            max_region_size = r.size;
-            max_region_paddr = r.paddr;
-        }
-    }
-    for r in memory_regions() {
-        if r.flags.contains(MemRegionFlags::FREE) && r.paddr == max_region_paddr {
-            axalloc::global_init(phys_to_virt(r.paddr).as_usize(), r.size);
-            break;
-        }
-    }
-    for r in memory_regions() {
-        if r.flags.contains(MemRegionFlags::FREE) && r.paddr != max_region_paddr {
-            axalloc::global_add_memory(phys_to_virt(r.paddr).as_usize(), r.size)
-                .expect("add heap memory region failed");
-        }
-    }
-}
-
-#[cfg(feature = "paging")]
-fn remap_kernel_memory() -> Result<(), axhal::paging::PagingError> {
-    use axhal::mem::{memory_regions, phys_to_virt};
-    use axhal::paging::PageTable;
-    use lazy_init::LazyInit;
-
-    static KERNEL_PAGE_TABLE: LazyInit<PageTable> = LazyInit::new();
-    if axhal::cpu::this_cpu_is_bsp() {
-        let mut kernel_page_table = PageTable::try_new()?;
-        for r in memory_regions() {
-            kernel_page_table.map_region(
-                phys_to_virt(r.paddr),
-                r.paddr,
-                r.size,
-                r.flags.into(),
-                true,
-            )?;
-        }
-        KERNEL_PAGE_TABLE.init_by(kernel_page_table);
-    }
-
-    unsafe { axhal::arch::write_page_table_root(KERNEL_PAGE_TABLE.root_paddr()) };
-    Ok(())
-}
+static INITED_CPUS: AtomicUsize = AtomicUsize::new(0);
 
 #[cfg_attr(not(test), no_mangle)]
 pub extern "C" fn runtime_main(cpu_id: usize, dtb: usize) -> () {
@@ -87,6 +37,23 @@ pub extern "C" fn runtime_main(cpu_id: usize, dtb: usize) -> () {
     info!("Logging is enabled.");
     info!("Primary CPU {} started, dtb = {:#x}.", cpu_id, dtb);
 
+    #[cfg(feature = "alloc")]
+    axalloc::init();
+    
+    #[cfg(feature = "paging")]
+    {
+        axhal::arch_init_early(cpu_id); // 如果不在页表初始化之前加入这行代码会触发unsafe
+        page_table::init();
+        use axhal::mem::phys_to_virt;
+        // Try to access virtio_mmio space.
+        let va = phys_to_virt(0x1000_1000.into()).as_usize();
+        let ptr = va as *const u32;
+        unsafe {
+            info!("Try to access virtio_mmio [{:#X}]", *ptr);
+        }
+        info!("[rt_page_table]: ok!");
+    }
+
     info!("Found physcial memory regions:");
     for r in axhal::mem::memory_regions() {
         info!(
@@ -97,8 +64,25 @@ pub extern "C" fn runtime_main(cpu_id: usize, dtb: usize) -> () {
             r.flags
         );
     }
-    #[cfg(feature = "alloc")]
-    init_allocator();
+
+    info!("Initialize platform devices...");
+    axhal::platform_init();
+
+    info!("Initialize schedule system ...");
+    task::init();
+
+    info!("Primary CPU {} init OK.", cpu_id);
+    INITED_CPUS.fetch_add(1, Ordering::Relaxed);
+
+    while !is_init_ok() {
+        core::hint::spin_loop();
+    }
 
     unsafe { main() };
+
+    axhal::misc::terminate();
+}
+
+fn is_init_ok() -> bool {
+    INITED_CPUS.load(Ordering::Acquire) == axconfig::SMP
 }

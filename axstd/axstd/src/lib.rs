@@ -19,3 +19,4 @@ pub use core::{arch, cell, cmp, hint, marker, mem, ops, ptr, slice, str};
 pub use axruntime::runtime_main;
 
 pub mod io;
+pub mod vm;
