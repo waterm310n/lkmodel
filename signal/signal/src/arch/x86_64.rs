@@ -5,6 +5,6 @@ pub fn rt_sigreturn() -> usize {
     unimplemented!("impl rt_sigreturn");
 }
 
-pub fn handle_signal(_ksig: &KSignal, _tf: &mut TrapFrame) {
+pub fn handle_signal(_ksig: &KSignal, _tf: &mut TrapFrame, _cause: usize) {
     unimplemented!("impl handle_signal");
 }
