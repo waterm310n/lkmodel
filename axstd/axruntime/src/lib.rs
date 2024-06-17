@@ -68,8 +68,12 @@ pub extern "C" fn runtime_main(cpu_id: usize, dtb: usize) -> () {
     info!("Initialize platform devices...");
     axhal::platform_init();
 
-    info!("Initialize schedule system ...");
-    task::init();
+    // 必须要有分页机制才能开启task
+    #[cfg(feature = "paging")]{
+        info!("Initialize schedule system ..."); 
+        task::init();
+    }
+    
 
     info!("Primary CPU {} init OK.", cpu_id);
     INITED_CPUS.fetch_add(1, Ordering::Relaxed);
