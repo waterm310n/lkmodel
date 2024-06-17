@@ -135,7 +135,9 @@ pub fn wait4(pid: usize, wstatus: usize, options: usize, rusage: usize) -> usize
         // Todo: deal with options in future.
         warn!("+++ Handle options in wait4 +++");
     }
-    assert!((options & WNOHANG) == 0);
+    if (options & WNOHANG) != 0 {
+        warn!("WNOHANG");
+    }
 
     let pid_type =
         if pid == -1 {
