@@ -26,6 +26,7 @@ pub const LINUX_SYSCALL_GETRANDOM: usize = 0x13e;
 pub const LINUX_SYSCALL_RSEQ: usize = 0x14e;
 
 pub const LINUX_SYSCALL_IOCTL: usize = 16;
+pub const LINUX_SYSCALL_FCNTL: usize = 72;
 pub const LINUX_SYSCALL_FTRUNCATE: usize = 77;
 pub const LINUX_SYSCALL_GETCWD: usize = 79;
 pub const LINUX_SYSCALL_CHDIR: usize = 80;
@@ -34,7 +35,9 @@ pub const LINUX_SYSCALL_TGKILL: usize = 234;
 pub const LINUX_SYSCALL_GETPID: usize = 39;
 pub const LINUX_SYSCALL_GETPPID: usize = 110;
 pub const LINUX_SYSCALL_GETGID: usize = 104;
+pub const LINUX_SYSCALL_GETUID: usize = 102;
 pub const LINUX_SYSCALL_GETEUID: usize = 107;
+pub const LINUX_SYSCALL_GETEGID: usize = 108;
 pub const LINUX_SYSCALL_GETTID: usize = 186;
 
 pub const LINUX_SYSCALL_FCHMOD: usize = 91;

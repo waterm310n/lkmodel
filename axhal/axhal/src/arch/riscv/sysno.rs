@@ -3,6 +3,7 @@
 ///
 
 pub const LINUX_SYSCALL_GETCWD: usize = 0x11;
+pub const LINUX_SYSCALL_FCNTL: usize = 0x19;
 pub const LINUX_SYSCALL_IOCTL: usize = 0x1d;
 pub const LINUX_SYSCALL_MKDIRAT: usize = 0x22;
 pub const LINUX_SYSCALL_UNLINKAT: usize = 0x23;
@@ -32,8 +33,10 @@ pub const LINUX_SYSCALL_SETPGID: usize = 0x9a;
 pub const LINUX_SYSCALL_UNAME: usize = 0xa0;
 pub const LINUX_SYSCALL_GETPID: usize = 0xac;
 pub const LINUX_SYSCALL_GETPPID: usize = 0xad;
+pub const LINUX_SYSCALL_GETUID: usize = 0xae;
 pub const LINUX_SYSCALL_GETEUID: usize = 0xaf;
 pub const LINUX_SYSCALL_GETGID: usize = 0xb0;
+pub const LINUX_SYSCALL_GETEGID: usize = 0xb1;
 pub const LINUX_SYSCALL_GETTID: usize = 0xb2;
 pub const LINUX_SYSCALL_BRK: usize = 0xd6;
 pub const LINUX_SYSCALL_MUNMAP: usize = 0xd7;

@@ -108,7 +108,6 @@ fn sigdelsetmask(set: &mut usize, mask: usize) {
 pub fn rt_sigaction(sig: usize, act: usize, oact: usize, sigsetsize: usize) -> usize {
     assert_eq!(sigsetsize, 8);
     debug!("rt_sigaction: sig {} act {:#X} oact {:#X}", sig, act, oact);
-    assert!(act != 0);
 
     let task = task::current();
 

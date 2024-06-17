@@ -33,6 +33,9 @@ const SEEK_END: usize = 2;
 
 const O_CREAT: usize = 0o100;
 
+// dup
+const F_DUPFD: usize = 0;
+
 pub fn openat(dfd: usize, filename: &str, flags: usize, mode: usize) -> AxResult<File> {
     info!(
         "openat '{}' at dfd {:#X} flags {:#X} mode {:#X}",
@@ -105,6 +108,11 @@ fn handle_path(dfd: usize, filename: &str) -> String {
 }
 
 pub fn read(fd: usize, ubuf: &mut [u8]) -> usize {
+    info!("read ... fd {}", fd);
+    if fd == 0 {
+        return read_from_stdio(ubuf);
+    }
+
     let count = ubuf.len();
     let current = task::current();
     let file = current.filetable.lock().get_file(fd).unwrap();
@@ -162,6 +170,24 @@ pub fn write(fd: usize, ubuf: &[u8]) -> usize {
 fn write_to_stdio(ubuf: &[u8]) -> usize {
     axhal::console::write_bytes(ubuf);
     ubuf.len()
+}
+
+fn read_from_stdio(ubuf: &mut [u8]) -> usize {
+    //axhal::console::read_bytes(ubuf)
+    // Block until at least one byte is read.
+    let read_len = axhal::console::read_bytes(ubuf);
+    if ubuf.is_empty() || read_len > 0 {
+        return read_len;
+    }
+
+    // try again until we got something
+    loop {
+        let read_len = axhal::console::read_bytes(ubuf);
+        if read_len > 0 {
+            return read_len;
+        }
+        task::yield_now();
+    }
 }
 
 #[derive(Debug)]
@@ -300,7 +326,11 @@ pub fn ioctl(fd: usize, request: usize, udata: usize) -> usize {
         fd, request, udata
     );
 
-    assert!(fd == 1 || fd == 2);
+    if fd != 0 && fd != 1 && fd != 2 {
+        return usize::MAX;
+    }
+
+    assert!(fd == 0 || fd == 1 || fd == 2);
     assert_eq!(request, TCGETS);
 
     let cc: [u8; NCCS] = [
@@ -402,6 +432,19 @@ pub fn do_open(filename: &str, _flags: usize) -> LinuxResult<FileRef> {
     let fs = current.fs.lock();
     let file = File::open(filename, &opts, &fs)?;
     Ok(Arc::new(Mutex::new(file)))
+}
+
+pub fn fcntl(fd: usize, cmd: usize, udata: usize) -> usize {
+    assert_eq!(F_DUPFD, cmd);
+
+    let cur = task::current();
+    let mut locked_fdt = cur.filetable.lock();
+    let new_fd = locked_fdt.alloc_fd(udata);
+    //let file = locked_fdt.get_file(fd).unwrap();
+    //locked_fdt.fd_install(new_fd, file.clone());
+    //unimplemented!("fcntl: fd {}-{} cmd {} udata {}", fd, new_fd, cmd, udata);
+    info!("fcntl: fd {}-{} cmd {} udata {}", fd, new_fd, cmd, udata);
+    new_fd
 }
 
 pub fn init(cpu_id: usize, dtb_pa: usize) {

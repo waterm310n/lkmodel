@@ -32,6 +32,15 @@ impl FileTable {
     pub fn remove(&mut self, fd: usize) {
         self.table.remove(fd-3);
     }
+
+    pub fn alloc_fd(&mut self, start: usize) -> usize {
+        self.table.alloc_pos(start).unwrap()
+    }
+
+    pub fn fd_install(&mut self, pos: usize, file: Arc<Mutex<File>>) {
+        let entry = FileTableEntry::new(file.clone());
+        self.table.install(pos, entry)
+    }
 }
 
 pub struct FileTableEntry {
@@ -85,6 +94,10 @@ impl<T> SlotVec<T> {
         idx
     }
 
+    pub fn install(&mut self, pos: usize, entry: T) {
+        self.slots[pos] = Some(entry);
+    }
+
     /// Remove and return the item at position `idx`.
     ///
     /// Return `None` if `idx` is out of bounds or the item has been removed.
@@ -99,6 +112,21 @@ impl<T> SlotVec<T> {
             self.num_occupied -= 1;
         }
         del_item
+    }
+
+    /// Alloc a slot from 'start' postion
+    ///
+    /// Return `None` if no slot can be used or the postion.
+    pub fn alloc_pos(&mut self, mut start: usize) -> Option<usize> {
+        if start < self.slots.len() {
+            start = self.slots.len();
+        }
+        let mut pos = self.slots.len();
+        while pos < start {
+            self.slots.push(None);
+            pos += 1;
+        }
+        Some(start)
     }
 }
 

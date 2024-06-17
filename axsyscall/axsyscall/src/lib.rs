@@ -17,6 +17,7 @@ pub type SyscallArgs = [usize; MAX_SYSCALL_ARGS];
 pub fn do_syscall(args: SyscallArgs, sysno: usize) -> usize {
     match sysno {
         LINUX_SYSCALL_IOCTL => linux_syscall_ioctl(args),
+        LINUX_SYSCALL_FCNTL => linux_syscall_fcntl(args),
         LINUX_SYSCALL_GETCWD => linux_syscall_getcwd(args),
         LINUX_SYSCALL_CHDIR => linux_syscall_chdir(args),
         LINUX_SYSCALL_FACCESSAT => linux_syscall_faccessat(args),
@@ -56,7 +57,9 @@ pub fn do_syscall(args: SyscallArgs, sysno: usize) -> usize {
         LINUX_SYSCALL_GETPID => linux_syscall_getpid(args),
         LINUX_SYSCALL_GETPPID => linux_syscall_getppid(args),
         LINUX_SYSCALL_GETGID => linux_syscall_getgid(args),
+        LINUX_SYSCALL_GETEGID => linux_syscall_getegid(args),
         LINUX_SYSCALL_SETPGID => linux_syscall_setpgid(args),
+        LINUX_SYSCALL_GETUID => linux_syscall_getuid(args),
         LINUX_SYSCALL_GETEUID => linux_syscall_geteuid(args),
         LINUX_SYSCALL_KILL => linux_syscall_kill(args),
         LINUX_SYSCALL_TGKILL => linux_syscall_tgkill(args),
@@ -162,7 +165,7 @@ fn linux_syscall_openat(args: SyscallArgs) -> usize {
 
 fn linux_syscall_close(args: SyscallArgs) -> usize {
     let [fd, ..] = args;
-    info!("linux_syscall_close [{}] ...", fd);
+    info!("linux_syscall_close [{:#x}] ...", fd);
     fileops::unregister_file(fd);
     0
 }
@@ -260,6 +263,11 @@ fn linux_syscall_ioctl(args: SyscallArgs) -> usize {
     fileops::ioctl(fd, request, udata)
 }
 
+fn linux_syscall_fcntl(args: SyscallArgs) -> usize {
+    let [fd, cmd, udata, ..] = args;
+    fileops::fcntl(fd, cmd, udata)
+}
+
 fn linux_syscall_getcwd(args: SyscallArgs) -> usize {
     let [buf, size, ..] = args;
 
@@ -351,8 +359,17 @@ fn linux_syscall_getgid(_args: SyscallArgs) -> usize {
     sys::getgid()
 }
 
+fn linux_syscall_getegid(_args: SyscallArgs) -> usize {
+    sys::getegid()
+}
+
 fn linux_syscall_geteuid(_args: SyscallArgs) -> usize {
     warn!("impl linux_syscall_geteuid");
+    0
+}
+
+fn linux_syscall_getuid(_args: SyscallArgs) -> usize {
+    warn!("impl linux_syscall_getuid");
     0
 }
 

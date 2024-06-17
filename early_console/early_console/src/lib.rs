@@ -17,6 +17,19 @@ pub fn write_bytes(bytes: &[u8]) {
     }
 }
 
+pub fn read_bytes(bytes: &mut [u8]) -> usize {
+    let mut read_len = 0;
+    while read_len < bytes.len() {
+        if let Some(c) = platform::getchar() {
+            bytes[read_len] = c;
+            read_len += 1;
+        } else {
+            break;
+        }
+    }
+    read_len
+}
+
 pub fn time() -> core::time::Duration {
     time::current_time()
 }

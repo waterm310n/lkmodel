@@ -68,6 +68,11 @@ pub fn getgid() -> usize {
     0
 }
 
+pub fn getegid() -> usize {
+    warn!("impl getegid");
+    0
+}
+
 pub fn setpgid() -> usize {
     warn!("impl setpgid");
     0
