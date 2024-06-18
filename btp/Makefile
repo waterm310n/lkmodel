@@ -1,4 +1,4 @@
-TARGETS := init vfork execl run signal
+TARGETS := init vfork execl run signal mmap
 
 CC := $(ARCH)-linux-gnu-gcc
 STRIP := $(ARCH)-linux-gnu-strip
