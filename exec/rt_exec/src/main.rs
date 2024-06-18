@@ -22,7 +22,7 @@ pub fn init(cpu_id: usize, dtb: usize) {
     exec::init(cpu_id, dtb);
     axtrap::init(cpu_id, dtb);
     let mut ctx = taskctx::current_ctx();
-    ctx.as_ctx_mut().init(None, fork::task_entry as usize, 0.into());
+    ctx.as_ctx_mut().init(None, run_queue::task_entry as usize, 0.into());
 }
 
 pub fn start(_cpu_id: usize, _dtb: usize) {

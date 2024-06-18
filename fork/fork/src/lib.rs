@@ -234,13 +234,7 @@ impl KernelCloneArgs {
 
         warn!("Todo: handle exit_signal {}", exit_signal);
 
-        let mut sched_info = SchedInfo::new();
-        //sched_info.init(self.entry, task_entry as usize, 0.into());
-        /////////////////////
-        sched_info.entry = self.entry;
-        sched_info.kstack = Some(TaskStack::alloc(align_up_4k(THREAD_SIZE)));
-        /////////////////////
-        sched_info.init_tid(tid);
+        let mut sched_info = run_queue::spawn_task(tid, self.entry);
         sched_info.init_tgid(tgid);
         sched_info.real_parent = real_parent;
         sched_info.group_leader = group_leader;
@@ -252,9 +246,6 @@ impl KernelCloneArgs {
         }
 
         arch::copy_thread(sched_info.pt_regs(), self)?;
-
-        let sp = sched_info.pt_regs_addr();
-        sched_info.thread.get_mut().init(crate::task_entry as usize, sp.into(), 0.into());
         task.sched_info = Arc::new(sched_info);
         Ok(())
     }
@@ -285,30 +276,6 @@ impl KernelCloneArgs {
         task.fs.lock().copy_fs_struct(task::current().fs.clone());
         Ok(())
     }
-}
-
-// Todo: We should move task_entry to taskctx.
-// Now schedule_tail: 'run_queue::force_unlock();` hinders us.
-// Consider to move it to sched first!
-pub extern "C" fn task_entry() -> ! {
-    info!("################ task_entry ...");
-    // schedule_tail
-    // unlock runqueue for freshly created task
-    run_queue::force_unlock();
-
-    let task = crate::current();
-    if task.sched_info.set_child_tid != 0 {
-        let ctid_ptr = task.sched_info.set_child_tid as *mut usize;
-        unsafe { (*ctid_ptr) = task.sched_info.tid(); }
-    }
-
-    if let Some(entry) = task.sched_info.entry {
-        unsafe { Box::from_raw(entry)() };
-    }
-
-    let sp = task::current().pt_regs_addr();
-    axhal::arch::ret_from_fork(sp);
-    unimplemented!("task_entry!");
 }
 
 /// Create a user mode thread.

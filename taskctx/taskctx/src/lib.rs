@@ -125,7 +125,7 @@ impl SchedInfo {
             active_mm_id: AtomicUsize::new(0),
 
             entry: None,
-            kstack: None,
+            kstack: Some(TaskStack::alloc(align_up_4k(THREAD_SIZE))),
             state: AtomicU8::new(TaskState::Ready as u8),
             in_wait_queue: AtomicBool::new(false),
             need_resched: AtomicBool::new(false),
@@ -226,10 +226,6 @@ impl SchedInfo {
     }
 
     pub fn init(&mut self, entry: Option<*mut dyn FnOnce()>, entry_func: usize, tls: VirtAddr) {
-        self.entry = entry;
-        self.kstack = Some(TaskStack::alloc(align_up_4k(THREAD_SIZE)));
-        let sp = self.pt_regs_addr();
-        self.thread.get_mut().init(entry_func, sp.into(), tls);
     }
 
     #[inline]

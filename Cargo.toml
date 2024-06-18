@@ -11,6 +11,7 @@ members = [
     "fork/rt_fork",
     "exec/rt_exec",
     "mutex/rt_mutex",
+    "run_queue/rt_run_queue",
     "task/rt_task",
     "axmount/rt_axmount",
     "axmount/test_axmount",
@@ -208,8 +209,9 @@ path = "./signal/signal"
 [patch."ssh://git@github.com/shilei-massclouds/wait_queue".wait_queue]
 path = "./wait_queue/wait_queue"
 
-[patch."ssh://git@github.com/shilei-massclouds/run_queue".run_queue]
-path = "./run_queue/run_queue"
+[patch."ssh://git@github.com/shilei-massclouds/run_queue"]
+run_queue = { path = "./run_queue/run_queue" }
+rt_run_queue = { path = "./run_queue/rt_run_queue" }
 
 [patch."ssh://git@github.com/shilei-massclouds/preempt_guard".preempt_guard]
 path = "./preempt_guard/preempt_guard"
