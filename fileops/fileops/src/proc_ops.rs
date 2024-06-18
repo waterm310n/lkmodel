@@ -107,7 +107,7 @@ fn handle_maps(offset: usize, buf: &mut [u8]) -> VfsResult<usize> {
     }
     let src = &src[offset..];
     error!("offset: {} {}", offset, buf.len());
-    let min_size = min(src.len() - offset, buf.len());
+    let min_size = min(src.len(), buf.len());
     buf[..min_size].copy_from_slice(&src[..min_size]);
     return Ok(buf.len());
 }
