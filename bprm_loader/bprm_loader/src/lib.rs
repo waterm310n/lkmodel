@@ -26,29 +26,42 @@ use user_stack::UserStack;
 use axhal::arch::TASK_SIZE;
 use mmap::{PROT_READ, PROT_WRITE, PROT_EXEC};
 use elf::abi::{PF_R, PF_W, PF_X};
+use axhal::arch::ELF_ET_DYN_BASE;
 
 const ELF_HEAD_BUF_SIZE: usize = 256;
 
 /// executes a new program.
 pub fn execve(
-    filename: &str, flags: usize, load_bias: usize, args: Vec<String>
+    filename: &str, flags: usize, args: Vec<String>
 ) -> LinuxResult<(usize, usize)> {
-    info!("bprm_execve: {}", filename);
+    error!("bprm_execve: {}", filename);
     let file = do_open_execat(filename, flags)?;
-    exec_binprm(file, load_bias, args)
+    exec_binprm(file, args)
 }
 
 fn do_open_execat(filename: &str, _flags: usize) -> LinuxResult<FileRef> {
     fileops::do_open(filename, _flags)
 }
 
-fn exec_binprm(file: FileRef, load_bias: usize, args: Vec<String>) -> LinuxResult<(usize, usize)> {
-    load_elf_binary(file, load_bias, args)
+fn exec_binprm(file: FileRef, args: Vec<String>) -> LinuxResult<(usize, usize)> {
+    load_elf_binary(file, args)
 }
 
 fn total_mapping_size(phdrs: &Vec<ProgramHeader>) -> usize {
-    let last = phdrs.len() - 1;
-    (phdrs[last].p_vaddr + phdrs[last].p_memsz - phdrs[0].p_vaddr) as usize
+    let mut first = usize::MAX;
+    let mut last = usize::MAX;
+    for (idx, phdr) in phdrs.iter().enumerate() {
+        if phdr.p_type == PT_LOAD {
+            if first == usize::MAX {
+                first = idx;
+            }
+            last = idx;
+        }
+    }
+    assert_ne!(first, usize::MAX);
+    assert_ne!(last, usize::MAX);
+    let start = align_down_4k(phdrs[0].p_vaddr as usize);
+    (phdrs[last].p_vaddr + phdrs[last].p_memsz) as usize - start
 }
 
 fn load_elf_interp(
@@ -170,8 +183,11 @@ fn elf_map(
 }
 
 fn load_elf_binary(
-    file: FileRef, load_bias: usize, mut args: Vec<String>
+    file: FileRef, mut args: Vec<String>
 ) -> LinuxResult<(usize, usize)> {
+    let mut interp_file = None;
+    let mut load_addr_set = false;
+    let mut load_bias = 0;
     let (phdrs, entry) = load_elf_phdrs(file.clone())?;
 
     for phdr in &phdrs {
@@ -188,31 +204,63 @@ fn load_elf_binary(
             let path = path.trim_matches(char::from(0));
             info!("PT_INTERP ret {} {:?}!", ret, path);
             let file = do_open_execat(path, 0)?;
+            interp_file = Some(file);
             args.insert(0, path.into());
-            return load_elf_interp(file, entry, args);
         }
     }
 
     let mut elf_bss: usize = 0;
     let mut elf_brk: usize = 0;
 
-    info!("There are {} PT_LOAD segments", phdrs.len());
     for phdr in &phdrs {
-        info!(
+        if phdr.p_type != PT_LOAD {
+            continue;
+        }
+        error!(
             "phdr: offset: {:#X}=>{:#X} size: {:#X}=>{:#X}",
             phdr.p_offset, phdr.p_vaddr, phdr.p_filesz, phdr.p_memsz
         );
+        let mut elf_type = MAP_PRIVATE;
+        let mut total_size = 0;
+        let va = phdr.p_vaddr as usize;
 
-        let va = align_down_4k(phdr.p_vaddr as usize);
-        let va_end = align_up_4k((phdr.p_vaddr + phdr.p_filesz) as usize);
-        mmap::_mmap(
+        if load_addr_set {
+            elf_type |= MAP_FIXED;
+        } else {
+            assert!(interp_file.is_some());
+            load_bias = align_down_4k(ELF_ET_DYN_BASE);
+            error!("load_bias: {:#x}", load_bias);
+            elf_type |= MAP_FIXED;
+
+            /*
+             * Since load_bias is used for all subsequent loading
+             * calculations, we must lower it by the first vaddr
+             * so that the remaining calculations based on the
+             * ELF vaddrs will be correctly offset. The result
+             * is then page aligned.
+             */
+            load_bias = align_down_4k(load_bias - va);
+
+            total_size = total_mapping_size(&phdrs);
+            assert_ne!(total_size, 0);
+        }
+
+        error!("=== binary elf_map load_bias: {:#x}, va: {:#x}, total: {:#x}\n",
+               load_bias, va, total_size);
+
+        let map_addr = elf_map(
+            &phdr,
             va + load_bias,
-            va_end - va,
+            total_size,
             make_prot(phdr.p_flags),
-            MAP_FIXED,
-            Some(file.clone()),
-            phdr.p_offset as usize,
+            elf_type,
+            Some(file.clone())
         )?;
+
+        if !load_addr_set {
+            load_addr_set = true;
+            load_bias += map_addr - align_down_4k(load_bias + va);
+        }
 
         let pos = (phdr.p_vaddr + phdr.p_filesz) as usize;
         if elf_bss < pos {
@@ -227,14 +275,22 @@ fn load_elf_binary(
     let entry = entry + load_bias;
     elf_bss += load_bias;
     elf_brk += load_bias;
-
-    let sp = get_arg_page(entry, args)?;
+    error!("entry {:#x} elf_bss {:#x} elf_brk {:#x}", entry, elf_bss, elf_brk);
 
     info!("set brk...");
     set_brk(elf_bss, elf_brk);
 
+    if let Some(file) = interp_file {
+        load_elf_interp(file, entry, args)
+    } else {
+        panic!("No interpret file!");
+    }
+
+    /*
+    let sp = get_arg_page(entry, args)?;
     padzero(elf_bss);
     Ok((entry, sp))
+    */
 }
 
 fn padzero(elf_bss: usize) {

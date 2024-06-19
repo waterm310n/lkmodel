@@ -18,7 +18,7 @@ pub fn kernel_execve(filename: &str) -> LinuxResult {
     let _ = setup_zero_page();
 
     let args = vec![filename.into()];
-    let (entry, sp) = bprm_loader::execve(filename, 0, 0, args)?;
+    let (entry, sp) = bprm_loader::execve(filename, 0, args)?;
 
     info!("start thread...");
     start_thread(task::current().pt_regs_addr(), entry, sp);
@@ -51,7 +51,7 @@ pub fn execve(path: &str, argv: usize, envp: usize) -> usize {
 
     // TODO: Move it into kernel_init().
     let _ = setup_zero_page();
-    let (entry, sp) = bprm_loader::execve(path, 0, 0, args).expect("exec error!");
+    let (entry, sp) = bprm_loader::execve(path, 0, args).expect("exec error!");
 
     info!("start thread...");
     start_thread(task::current().pt_regs_addr(), entry, sp);
