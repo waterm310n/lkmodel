@@ -11,7 +11,7 @@ use alloc::string::String;
 
 use axerrno::LinuxResult;
 use axhal::arch::STACK_SIZE;
-use elf::abi::{PT_INTERP, PT_LOAD, ET_DYN};
+use elf::abi::{PT_INTERP, PT_LOAD};
 use elf::endian::AnyEndian;
 use elf::parse::ParseAt;
 use elf::segment::ProgramHeader;
@@ -23,7 +23,7 @@ use axtype::is_aligned;
 use mmap::FileRef;
 use mmap::{MAP_ANONYMOUS, MAP_FIXED, MAP_PRIVATE};
 use user_stack::UserStack;
-use axhal::arch::{ELF_ET_DYN_BASE, TASK_SIZE};
+use axhal::arch::TASK_SIZE;
 use mmap::{PROT_READ, PROT_WRITE, PROT_EXEC};
 use elf::abi::{PF_R, PF_W, PF_X};
 
@@ -76,7 +76,6 @@ fn load_elf_interp(
         );
 
         let va = align_down_4k(phdr.p_vaddr as usize);
-        let va_end = align_up_4k((phdr.p_vaddr + phdr.p_filesz) as usize);
 
         if load_addr_set {
             elf_type |= MAP_FIXED;
@@ -139,7 +138,7 @@ fn elf_map(
     mut va: usize,
     mut total_size: usize,
     prot: usize,
-    mut flags: usize,
+    flags: usize,
     file: Option<FileRef>,
 ) -> LinuxResult<usize> {
     let mut size = (phdr.p_filesz + elf_page_offset(phdr.p_vaddr)) as usize;

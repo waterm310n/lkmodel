@@ -13,10 +13,6 @@ use axerrno::{LinuxError, LinuxResult};
 use task::{current, Tid, TaskRef, TaskStruct};
 use spinbase::SpinNoIrq;
 use task::SIGCHLD;
-use taskctx::SchedInfo;
-use taskctx::TaskStack;
-use axtype::align_up_4k;
-use taskctx::THREAD_SIZE;
 
 bitflags::bitflags! {
     /// clone flags

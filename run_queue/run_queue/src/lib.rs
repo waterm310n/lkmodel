@@ -5,8 +5,7 @@ use alloc::sync::Arc;
 use taskctx::CtxRef;
 use crate::run_queue::RUN_QUEUE;
 use spinbase::SpinNoIrq;
-use taskctx::{Tid, SchedInfo, TaskStack, THREAD_SIZE};
-use memory_addr::align_up_4k;
+use taskctx::{Tid, SchedInfo};
 
 #[macro_use]
 extern crate log;
@@ -42,15 +41,6 @@ pub fn spawn_task_raw<F>(tid: Tid, f: F) -> Arc<SchedInfo>
 where
     F: FnOnce() + 'static
 {
-    /*
-    let mut sched_info = SchedInfo::new();
-    sched_info.init_tid(tid);
-    sched_info.entry = Some(Box::into_raw(Box::new(f)));
-    sched_info.kstack = Some(TaskStack::alloc(align_up_4k(THREAD_SIZE)));
-    let sp = sched_info.pt_regs_addr();
-    sched_info.thread.get_mut().init(task_entry as usize, sp.into(), 0.into());
-    Arc::new(sched_info)
-    */
     let entry: Option<*mut dyn FnOnce()> = Some(Box::into_raw(Box::new(f)));
     Arc::new(spawn_task(tid, entry))
 }
@@ -59,7 +49,6 @@ pub fn spawn_task(tid: Tid, entry: Option<*mut dyn FnOnce()>) -> SchedInfo {
     let mut sched_info = SchedInfo::new();
     sched_info.init_tid(tid);
     sched_info.entry = entry;
-    //sched_info.kstack = Some(TaskStack::alloc(align_up_4k(THREAD_SIZE)));
     let sp = sched_info.pt_regs_addr();
     sched_info.thread.get_mut().init(task_entry as usize, sp.into(), 0.into());
     sched_info

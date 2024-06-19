@@ -13,7 +13,6 @@ use core::{alloc::Layout, cell::UnsafeCell, ptr::NonNull};
 use core::sync::atomic::{AtomicUsize, AtomicU8, AtomicBool, Ordering};
 use axhal::arch::TaskContext as ThreadStruct;
 use axhal::arch::TrapFrame;
-use axhal::mem::VirtAddr;
 use axhal::trap::{TRAPFRAME_SIZE, STACK_ALIGN};
 use memory_addr::{align_up_4k, align_down, PAGE_SIZE_4K};
 use spinbase::SpinNoIrq;
@@ -223,9 +222,6 @@ impl SchedInfo {
     #[inline]
     pub const unsafe fn ctx_mut_ptr(&self) -> *mut ThreadStruct {
         self.thread.get()
-    }
-
-    pub fn init(&mut self, entry: Option<*mut dyn FnOnce()>, entry_func: usize, tls: VirtAddr) {
     }
 
     #[inline]
