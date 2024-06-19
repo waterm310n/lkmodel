@@ -6,7 +6,7 @@ extern crate log;
 extern crate alloc;
 use axerrno::LinuxResult;
 use axfile::fops::File;
-use axhal::arch::TASK_UNMAPPED_BASE;
+use axhal::arch::STACK_TOP;
 use axhal::mem::{phys_to_virt, virt_to_phys};
 use axio::SeekFrom;
 use core::ops::Bound;
@@ -32,9 +32,9 @@ pub const PROT_GROWSDOWN: usize = 0x01000000;
 pub const PROT_GROWSUP: usize = 0x02000000;
 
 /// Share changes
-const MAP_SHARED: usize = 0x01;
+pub const MAP_SHARED: usize = 0x01;
 /// Changes are private
-const MAP_PRIVATE: usize = 0x02;
+pub const MAP_PRIVATE: usize = 0x02;
 /// share + validate extension flags
 const MAP_SHARED_VALIDATE: usize = 0x03;
 
@@ -144,7 +144,7 @@ pub fn _mmap(
 
     if (flags & MAP_FIXED) == 0 {
         va = get_unmapped_vma(va, len);
-        debug!("Get unmapped vma {:#X}", va);
+        error!("Get unmapped vma {:#X}", va);
     }
 
     if va > TASK_SIZE - len {
@@ -245,10 +245,15 @@ const fn in_vma(start: usize, end: usize, vma: &VmAreaStruct) -> bool {
     in_range(start, end, vma.vm_start, vma.vm_end)
 }
 
+fn mmap_base() -> usize {
+    const MIN_GAP: usize = 0x800_0000; // SZ_128M
+    STACK_TOP - MIN_GAP
+}
+
 pub fn get_unmapped_vma(_va: usize, len: usize) -> usize {
     let mm = task::current().mm();
     let locked_mm = mm.lock();
-    let mut gap_end = TASK_UNMAPPED_BASE;
+    let mut gap_end = mmap_base();
     for (_, vma) in locked_mm.vmas.iter().rev() {
         debug!(
             "get_unmapped_vma iterator: {:#X} {:#X} {:#X}",
@@ -268,7 +273,7 @@ pub fn get_unmapped_vma(_va: usize, len: usize) -> usize {
     }
 
     if gap_end >= len {
-        debug!("get_unmapped_vma: {:#X}", gap_end - len);
+        error!("get_unmapped_vma: {:#X}", gap_end - len);
         return gap_end - len;
     }
     unimplemented!("NO available unmapped vma!");
@@ -482,7 +487,7 @@ fn sync_file(va: usize, len: usize, file: &mut File, offset: usize) {
 pub fn munmap(va: usize, mut len: usize) -> usize {
     assert!(is_aligned_4k(va));
     len = align_up_4k(len);
-    debug!("munmap {:#X} - {:#X}", va, va + len);
+    error!("munmap {:#X} - {:#X}", va, va + len);
 
     while let Some(mut overlap) = find_overlap(va, len) {
         debug!("find overlap {:#X}-{:#X}", overlap.vm_start, overlap.vm_end);

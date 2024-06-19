@@ -15,6 +15,7 @@ pub use self::context::{start_thread, GeneralRegisters, TaskContext, TrapFrame};
 
 pub const TASK_SIZE: usize = 0x40_0000_0000;
 pub const STACK_SIZE: usize = 32 * PAGE_SIZE_4K;
+pub const STACK_TOP: usize = TASK_SIZE;
 
 /*
  * This is the location that an ET_DYN program is loaded if exec'ed.

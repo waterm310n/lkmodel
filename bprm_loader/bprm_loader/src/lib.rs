@@ -11,7 +11,7 @@ use alloc::string::String;
 
 use axerrno::LinuxResult;
 use axhal::arch::STACK_SIZE;
-use elf::abi::{PT_INTERP, PT_LOAD};
+use elf::abi::{PT_INTERP, PT_LOAD, ET_DYN};
 use elf::endian::AnyEndian;
 use elf::parse::ParseAt;
 use elf::segment::ProgramHeader;
@@ -21,7 +21,7 @@ use axio::SeekFrom;
 use axtype::{align_down_4k, align_up_4k, PAGE_SIZE};
 use axtype::is_aligned;
 use mmap::FileRef;
-use mmap::{MAP_ANONYMOUS, MAP_FIXED};
+use mmap::{MAP_ANONYMOUS, MAP_FIXED, MAP_PRIVATE};
 use user_stack::UserStack;
 use axhal::arch::{ELF_ET_DYN_BASE, TASK_SIZE};
 use mmap::{PROT_READ, PROT_WRITE, PROT_EXEC};
@@ -46,20 +46,30 @@ fn exec_binprm(file: FileRef, load_bias: usize, args: Vec<String>) -> LinuxResul
     load_elf_binary(file, load_bias, args)
 }
 
+fn total_mapping_size(phdrs: &Vec<ProgramHeader>) -> usize {
+    let last = phdrs.len() - 1;
+    (phdrs[last].p_vaddr + phdrs[last].p_memsz - phdrs[0].p_vaddr) as usize
+}
+
 fn load_elf_interp(
     file: FileRef,
-    load_bias: usize,
     app_entry: usize,
     args: Vec<String>,
 ) -> LinuxResult<(usize, usize)> {
+    let no_base: usize = 1;
+    let mut load_addr = 0;
+    let mut load_addr_set = false;
     let (phdrs, entry) = load_elf_phdrs(file.clone())?;
 
     let mut elf_bss: usize = 0;
     let mut elf_brk: usize = 0;
 
+    let mut total_size = total_mapping_size(&phdrs);
+
     info!("interp: args: {:?}", args);
     info!("There are {} PT_LOAD segments", phdrs.len());
     for phdr in &phdrs {
+        let mut elf_type = MAP_PRIVATE;
         info!(
             "phdr: offset: {:#X}=>{:#X} size: {:#X}=>{:#X}",
             phdr.p_offset, phdr.p_vaddr, phdr.p_filesz, phdr.p_memsz
@@ -67,14 +77,30 @@ fn load_elf_interp(
 
         let va = align_down_4k(phdr.p_vaddr as usize);
         let va_end = align_up_4k((phdr.p_vaddr + phdr.p_filesz) as usize);
-        mmap::_mmap(
-            va + load_bias,
-            va_end - va,
+
+        if load_addr_set {
+            elf_type |= MAP_FIXED;
+        } else if no_base != 0 {
+            error!("no_base {:#x}", no_base);
+            load_addr = va.wrapping_neg();
+            assert_eq!(load_addr+va, 0);
+        }
+
+        let map_addr = elf_map(
+            &phdr,
+            va + load_addr,
+            total_size,
             make_prot(phdr.p_flags),
-            MAP_FIXED,
-            Some(file.clone()),
-            phdr.p_offset as usize,
+            elf_type,
+            Some(file.clone())
         )?;
+        total_size = 0;
+
+        if !load_addr_set {
+            load_addr = map_addr - align_down_4k(va);
+            error!("load_addr {:#x}", load_addr);
+            load_addr_set = true;
+        }
 
         let pos = (phdr.p_vaddr + phdr.p_filesz) as usize;
         if elf_bss < pos {
@@ -86,9 +112,9 @@ fn load_elf_interp(
         }
     }
 
-    let entry = entry + load_bias;
-    elf_bss += load_bias;
-    elf_brk += load_bias;
+    let entry = entry + load_addr;
+    elf_bss += load_addr;
+    elf_brk += load_addr;
 
     let sp = get_arg_page(app_entry, args)?;
 
@@ -98,6 +124,50 @@ fn load_elf_interp(
     info!("pad bss...");
     padzero(elf_bss);
     Ok((entry, sp))
+}
+
+fn elf_page_offset(va: u64) -> u64 {
+    va & (PAGE_SIZE-1) as u64
+}
+
+fn bad_addr(va: usize) -> bool {
+    va >= TASK_SIZE
+}
+
+fn elf_map(
+    phdr: &ProgramHeader,
+    mut va: usize,
+    mut total_size: usize,
+    prot: usize,
+    mut flags: usize,
+    file: Option<FileRef>,
+) -> LinuxResult<usize> {
+    let mut size = (phdr.p_filesz + elf_page_offset(phdr.p_vaddr)) as usize;
+    let off = (phdr.p_offset - elf_page_offset(phdr.p_vaddr)) as usize;
+    va = align_down_4k(va);
+    size = align_up_4k(size);
+
+    /* mmap() will return -EINVAL if given a zero size, but a
+     * segment with zero filesize is perfectly valid */
+    if size == 0 {
+        return Ok(va);
+    }
+
+    if total_size > 0 {
+        total_size = align_up_4k(total_size);
+        error!("elf_map1: addr {:#x}, total_size {:#x}, prot {:#x}, type {:#x}, off {:#x}\n",
+               va, total_size, prot, flags, off);
+        let map_addr = mmap::_mmap(va, total_size, prot, flags, file, off)?;
+        if !bad_addr(map_addr) {
+            error!("elf_map: unmap\n");
+            mmap::munmap(map_addr+size, total_size-size);
+        }
+        Ok(map_addr)
+    } else {
+        error!("elf_map2: addr {:#x}, size {:#x}, prot {:#x}, type {:#x}, off {:#x}\n",
+               va, size, prot, flags, off);
+        mmap::_mmap(va, size, prot, flags, file, off)
+    }
 }
 
 fn load_elf_binary(
@@ -118,11 +188,9 @@ fn load_elf_binary(
             let path = from_utf8(&path).expect("Interpreter path isn't valid UTF-8");
             let path = path.trim_matches(char::from(0));
             info!("PT_INTERP ret {} {:?}!", ret, path);
-            // Todo: check elf_ex->e_type == ET_DYN
-            let load_bias = align_down_4k(ELF_ET_DYN_BASE);
             let file = do_open_execat(path, 0)?;
             args.insert(0, path.into());
-            return load_elf_interp(file, load_bias, entry, args);
+            return load_elf_interp(file, entry, args);
         }
     }
 
