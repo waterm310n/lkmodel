@@ -7,6 +7,7 @@ use capability::{Cap, WithCap};
 use core::fmt;
 use fstree::FsStruct;
 use alloc::collections::BTreeMap;
+use core::sync::atomic::{AtomicUsize, Ordering};
 
 #[cfg(feature = "myfs")]
 pub use crate::dev::Disk;
@@ -22,11 +23,18 @@ pub type FileAttr = axfs_vfs::VfsNodeAttr;
 /// Alias of [`axfs_vfs::VfsNodePerm`].
 pub type FilePerm = axfs_vfs::VfsNodePerm;
 
+static NEXT_INO: AtomicUsize = AtomicUsize::new(0);
+
+pub fn alloc_ino() -> usize {
+    NEXT_INO.fetch_add(1, Ordering::Relaxed)
+}
+
 /// An opened file object, with open permissions and a cursor.
 pub struct File {
     node: WithCap<VfsNodeRef>,
     is_append: bool,
     offset: u64,
+    pub ino: usize,
     pub shared_map: BTreeMap<usize, usize>,
 }
 
@@ -184,6 +192,7 @@ impl File {
             node: WithCap::new(node, cap),
             is_append: false,
             offset: 0,
+            ino: 0,
             shared_map: BTreeMap::new(),
         }
     }
@@ -232,6 +241,7 @@ impl File {
             node: WithCap::new(node, access_cap),
             is_append: opts.append,
             offset: 0,
+            ino: alloc_ino(),
             shared_map: BTreeMap::new(),
         })
     }

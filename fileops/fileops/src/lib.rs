@@ -243,11 +243,13 @@ pub fn fstatat(dfd: usize, path: usize, statbuf_ptr: usize, flags: usize) -> usi
     assert!(dfd > 2);
 
     info!("fstatat dfd {:#x} flags {:#x}", dfd, flags);
-    let metadata = if (flags & AT_EMPTY_PATH) == 0 {
+    let (metadata, ino) = if (flags & AT_EMPTY_PATH) == 0 {
         let path = get_user_str(path);
         warn!("!!! NON-EMPTY for path: {}\n", path);
         match openat(dfd, &path, flags, 0) {
-            Ok(file) => file.get_attr().unwrap(),
+            Ok(file) => {
+                (file.get_attr().unwrap(), file.ino)
+            },
             Err(e) => {
                 return linux_err_from!(e);
             }
@@ -262,7 +264,7 @@ pub fn fstatat(dfd: usize, path: usize, statbuf_ptr: usize, flags: usize) -> usi
             }
         };
         let locked_file = file.lock();
-        locked_file.get_attr().unwrap()
+        (locked_file.get_attr().unwrap(), locked_file.ino)
     };
 
     let ty = metadata.file_type() as u8;
@@ -273,7 +275,7 @@ pub fn fstatat(dfd: usize, path: usize, statbuf_ptr: usize, flags: usize) -> usi
 
     unsafe {
         *statbuf = KernelStat {
-            st_ino: 1,
+            st_ino: ino as u64,
             st_nlink: 1,
             st_mode,
             st_uid: 1000,
@@ -334,6 +336,9 @@ pub fn ioctl(fd: usize, request: usize, udata: usize) -> usize {
     }
 
     assert!(fd == 0 || fd == 1 || fd == 2);
+    if request != TCGETS {
+        return usize::MAX;
+    }
     assert_eq!(request, TCGETS);
 
     let cc: [u8; NCCS] = [
