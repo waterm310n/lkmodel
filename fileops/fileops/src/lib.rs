@@ -54,7 +54,7 @@ pub fn openat(dfd: usize, filename: &str, flags: usize, mode: usize) -> AxResult
     let fs = current.fs.lock();
 
     let path = handle_path(dfd, filename);
-    info!("openat path {}", path);
+    error!("openat path {}", path);
     File::open(&path, &opts, &fs).or_else(|e| {
         if e == NotFound {
             // Handle special filesystem, e.g., procfs, sysfs ..
@@ -428,6 +428,8 @@ pub fn ftruncate(fd: usize, length: usize) -> usize {
 }
 
 pub fn do_open(filename: &str, _flags: usize) -> LinuxResult<FileRef> {
+    error!("do_open path {}", filename);
+
     let mut opts = OpenOptions::new();
     opts.read(true);
 

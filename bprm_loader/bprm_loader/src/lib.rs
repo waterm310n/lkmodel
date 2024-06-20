@@ -67,19 +67,18 @@ fn total_mapping_size(phdrs: &Vec<ProgramHeader>) -> usize {
 fn load_elf_interp(
     file: FileRef,
     app_entry: usize,
-    args: Vec<String>,
 ) -> LinuxResult<(usize, usize)> {
     let no_base: usize = 1;
     let mut load_addr = 0;
     let mut load_addr_set = false;
-    let (phdrs, entry) = load_elf_phdrs(file.clone())?;
+    let (phdrs, entry, _, _) = load_elf_phdrs(file.clone())?;
 
     let mut elf_bss: usize = 0;
     let mut elf_brk: usize = 0;
 
     let mut total_size = total_mapping_size(&phdrs);
 
-    info!("interp: args: {:?}", args);
+    //info!("interp: args: {:?}", args);
     info!("There are {} PT_LOAD segments", phdrs.len());
     for phdr in &phdrs {
         let mut elf_type = MAP_PRIVATE;
@@ -124,18 +123,19 @@ fn load_elf_interp(
         }
     }
 
-    let entry = entry + load_addr;
+    //let entry = entry + load_addr;
     elf_bss += load_addr;
     elf_brk += load_addr;
 
-    let sp = get_arg_page(app_entry, args)?;
+    //let sp = get_arg_page(app_entry, args)?;
 
     info!("set brk...");
     set_brk(elf_bss, elf_brk);
 
     info!("pad bss...");
     padzero(elf_bss);
-    Ok((entry, sp))
+    //Ok((entry, sp))
+    Ok((load_addr, entry))
 }
 
 fn elf_page_offset(va: u64) -> u64 {
@@ -188,7 +188,7 @@ fn load_elf_binary(
     let mut interp_file = None;
     let mut load_addr_set = false;
     let mut load_bias = 0;
-    let (phdrs, entry) = load_elf_phdrs(file.clone())?;
+    let (phdrs, entry, e_phoff, e_phnum) = load_elf_phdrs(file.clone())?;
 
     for phdr in &phdrs {
         if phdr.p_type == PT_INTERP {
@@ -211,6 +211,7 @@ fn load_elf_binary(
 
     let mut elf_bss: usize = 0;
     let mut elf_brk: usize = 0;
+    let mut phdr_addr: usize = 0;
 
     for phdr in &phdrs {
         if phdr.p_type != PT_LOAD {
@@ -262,6 +263,15 @@ fn load_elf_binary(
             load_bias += map_addr - align_down_4k(load_bias + va);
         }
 
+        /*
+         * Figure out which segment in the file contains the Program
+         * Header table, and map to the associated memory address.
+         */
+        if phdr.p_offset as usize <= e_phoff && e_phoff < (phdr.p_offset + phdr.p_filesz) as usize {
+            phdr_addr = e_phoff - phdr.p_offset as usize + phdr.p_vaddr as usize;
+            error!("===> phdr_addr {:#x}", phdr_addr);
+        }
+
         let pos = (phdr.p_vaddr + phdr.p_filesz) as usize;
         if elf_bss < pos {
             elf_bss = pos;
@@ -273,24 +283,33 @@ fn load_elf_binary(
     }
 
     let entry = entry + load_bias;
+    phdr_addr += load_bias;
     elf_bss += load_bias;
     elf_brk += load_bias;
     error!("entry {:#x} elf_bss {:#x} elf_brk {:#x}", entry, elf_bss, elf_brk);
 
     info!("set brk...");
     set_brk(elf_bss, elf_brk);
+    padzero(elf_bss);
 
-    if let Some(file) = interp_file {
-        load_elf_interp(file, entry, args)
+    let (mut elf_entry, interp_e_entry) = if let Some(file) = interp_file {
+        load_elf_interp(file, entry)?
     } else {
         panic!("No interpret file!");
-    }
+    };
 
-    /*
-    let sp = get_arg_page(entry, args)?;
-    padzero(elf_bss);
-    Ok((entry, sp))
-    */
+    let interp_load_addr = elf_entry;
+    elf_entry += interp_e_entry;
+
+    create_elf_tables(e_phnum, interp_load_addr, entry, phdr_addr);
+
+    let sp = get_arg_page(elf_entry, args)?;
+    Ok((elf_entry, sp))
+}
+
+fn create_elf_tables(e_phnum: usize, interp_load_addr: usize, e_entry: usize, phdr_addr: usize) {
+    error!("create_elf_tables: e_phum {:#x}, interp_load_addr {:#x} e_entry {:#x} phdr_addr {:#x}",
+           e_phnum, interp_load_addr, e_entry, phdr_addr);
 }
 
 fn padzero(elf_bss: usize) {
@@ -339,7 +358,7 @@ fn make_prot(pflags: u32) -> usize {
     prot
 }
 
-fn load_elf_phdrs(file: FileRef) -> LinuxResult<(Vec<ProgramHeader>, usize)> {
+fn load_elf_phdrs(file: FileRef) -> LinuxResult<(Vec<ProgramHeader>, usize, usize, usize)> {
     let mut file = file.lock();
     let mut buf: [u8; ELF_HEAD_BUF_SIZE] = [0; ELF_HEAD_BUF_SIZE];
     file.read(&mut buf)?;
@@ -364,7 +383,7 @@ fn load_elf_phdrs(file: FileRef) -> LinuxResult<(Vec<ProgramHeader>, usize)> {
         .iter()
         .filter(|phdr| phdr.p_type == PT_LOAD || phdr.p_type == PT_INTERP)
         .collect();
-    Ok((phdrs, ehdr.e_entry as usize))
+    Ok((phdrs, ehdr.e_entry as usize, ehdr.e_phoff as usize, ehdr.e_phnum as usize))
 }
 
 /*
