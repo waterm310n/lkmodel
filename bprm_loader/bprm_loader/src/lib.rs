@@ -1,4 +1,5 @@
 #![no_std]
+#![feature(cstr_count_bytes)]
 
 #[macro_use]
 extern crate log;
@@ -6,6 +7,7 @@ extern crate alloc;
 
 use core::ptr::null;
 use core::str::from_utf8;
+use alloc::vec;
 use alloc::vec::Vec;
 use alloc::string::String;
 
@@ -18,7 +20,7 @@ use elf::segment::ProgramHeader;
 use elf::segment::SegmentTable;
 use elf::ElfBytes;
 use axio::SeekFrom;
-use axtype::{align_down_4k, align_up_4k, PAGE_SIZE};
+use axtype::{align_down, align_down_4k, align_up_4k, PAGE_SIZE};
 use axtype::is_aligned;
 use mmap::FileRef;
 use mmap::{MAP_ANONYMOUS, MAP_FIXED, MAP_PRIVATE};
@@ -32,19 +34,19 @@ const ELF_HEAD_BUF_SIZE: usize = 256;
 
 /// executes a new program.
 pub fn execve(
-    filename: &str, flags: usize, args: Vec<String>
+    filename: &str, flags: usize, argv: Vec<String>, envp: Vec<String>
 ) -> LinuxResult<(usize, usize)> {
     error!("bprm_execve: {}", filename);
     let file = do_open_execat(filename, flags)?;
-    exec_binprm(file, args)
+    exec_binprm(file, argv, envp)
 }
 
 fn do_open_execat(filename: &str, _flags: usize) -> LinuxResult<FileRef> {
     fileops::do_open(filename, _flags)
 }
 
-fn exec_binprm(file: FileRef, args: Vec<String>) -> LinuxResult<(usize, usize)> {
-    load_elf_binary(file, args)
+fn exec_binprm(file: FileRef, argv: Vec<String>, envp: Vec<String>) -> LinuxResult<(usize, usize)> {
+    load_elf_binary(file, argv, envp)
 }
 
 fn total_mapping_size(phdrs: &Vec<ProgramHeader>) -> usize {
@@ -127,8 +129,6 @@ fn load_elf_interp(
     elf_bss += load_addr;
     elf_brk += load_addr;
 
-    //let sp = get_arg_page(app_entry, args)?;
-
     info!("set brk...");
     set_brk(elf_bss, elf_brk);
 
@@ -183,7 +183,7 @@ fn elf_map(
 }
 
 fn load_elf_binary(
-    file: FileRef, mut args: Vec<String>
+    file: FileRef, mut argv: Vec<String>, envp: Vec<String>
 ) -> LinuxResult<(usize, usize)> {
     let mut interp_file = None;
     let mut load_addr_set = false;
@@ -205,7 +205,6 @@ fn load_elf_binary(
             info!("PT_INTERP ret {} {:?}!", ret, path);
             let file = do_open_execat(path, 0)?;
             interp_file = Some(file);
-            args.insert(0, path.into());
         }
     }
 
@@ -303,7 +302,7 @@ fn load_elf_binary(
 
     create_elf_tables(e_phnum, interp_load_addr, entry, phdr_addr);
 
-    let sp = get_arg_page(elf_entry, args)?;
+    let sp = get_arg_page(e_phnum, interp_load_addr, entry, phdr_addr, elf_entry, argv, envp)?;
     Ok((elf_entry, sp))
 }
 
@@ -386,33 +385,50 @@ fn load_elf_phdrs(file: FileRef) -> LinuxResult<(Vec<ProgramHeader>, usize, usiz
     Ok((phdrs, ehdr.e_entry as usize, ehdr.e_phoff as usize, ehdr.e_phnum as usize))
 }
 
-/*
-const AT_PHDR: u8 = 3;
-const AT_PHENT: u8 = 4;
-const AT_PHNUM: u8 = 5;
-const AT_PAGESZ: u8 = 6;
-const AT_ENTRY: u8 = 9;
-const AT_RANDOM: u8 = 25;
+/// entries in ARCH_DLINFO
+const AT_VECTOR_SIZE_ARCH: usize = 7;
+const AT_VECTOR_SIZE_BASE: usize = 20;
+const AT_VECTOR_SIZE: usize = 2*(AT_VECTOR_SIZE_ARCH + AT_VECTOR_SIZE_BASE + 1);
 
-pub fn get_auxv_vector(
-    entry: usize
-) -> BTreeMap<u8, usize> {
-    let mut map = BTreeMap::new();
-    map.insert(
-        AT_PHDR,
-        40,
-    );
-    map.insert(AT_PHENT, 38);
-    map.insert(AT_PHNUM, 2);
-    map.insert(AT_ENTRY, entry);
-    map.insert(AT_RANDOM, 0);
-    map.insert(AT_PAGESZ, PAGE_SIZE);
-    map
+/// Symbolic values for the entries in the auxiliary table
+/// put on the initial stack
+const AT_NULL   : usize = 0;    /* end of vector */
+const AT_IGNORE : usize = 1;    /* entry should be ignored */
+const AT_EXECFD : usize = 2;    /* file descriptor of program */
+const AT_PHDR   : usize = 3;    /* program headers for program */
+const AT_PHENT  : usize = 4;    /* size of program header entry */
+const AT_PHNUM  : usize = 5;    /* number of program headers */
+const AT_PAGESZ : usize = 6;    /* system page size */
+const AT_BASE   : usize = 7;    /* base address of interpreter */
+const AT_FLAGS  : usize = 8;    /* flags */
+const AT_ENTRY  : usize = 9;    /* entry point of program */
+const AT_NOTELF : usize = 10;   /* program is not ELF */
+const AT_UID    : usize = 11;   /* real uid */
+const AT_EUID   : usize = 12;   /* effective uid */
+const AT_GID    : usize = 13;   /* real gid */
+const AT_EGID   : usize = 14;   /* effective gid */
+const AT_PLATFORM: usize = 15; /* string identifying CPU for optimizations */
+const AT_HWCAP  : usize = 16;   /* arch dependent hints at CPU capabilities */
+const AT_CLKTCK : usize = 17;   /* frequency at which times() increments */
+/* AT_* values 18 through 22 are reserved */
+const AT_SECURE : usize = 23;   /* secure mode boolean */
+const AT_BASE_PLATFORM: usize = 24;       /* string identifying real platform, may differ from AT_PLATFORM. */
+const AT_RANDOM : usize = 25;   /* address of 16 random bytes */
+const AT_HWCAP2 : usize = 26;   /* extension of AT_HWCAP */
+const AT_EXECFN : usize = 31;   /* filename of program */
+
+const MAX_ARG_STRLEN: usize = PAGE_SIZE;
+
+fn new_aux_ent(elf_info: &mut Vec<usize>, id: usize, val: usize) {
+    elf_info.push(id);
+    elf_info.push(val);
 }
-*/
 
-fn get_arg_page(_entry: usize, args: Vec<String>) -> LinuxResult<usize> {
-    //let auxv = get_auxv_vector(entry);
+fn get_arg_page(
+    e_phnum: usize, interp_load_addr: usize, entry: usize, phdr_addr: usize,
+    _entry: usize, argv: Vec<String>, envp: Vec<String>
+) -> LinuxResult<usize> {
+    //let auxv = : usize = get_auxv_vector(entry);
 
     let va = TASK_SIZE - STACK_SIZE;
     mmap::_mmap(va, STACK_SIZE, PROT_READ | PROT_WRITE, MAP_FIXED | MAP_ANONYMOUS, None, 0)?;
@@ -420,53 +436,137 @@ fn get_arg_page(_entry: usize, args: Vec<String>) -> LinuxResult<usize> {
     let direct_va = mmap::faultin_page(TASK_SIZE - PAGE_SIZE, 0);
     let mut stack = UserStack::new(TASK_SIZE, direct_va + PAGE_SIZE);
     stack.push(&[null::<u64>()]);
+    error!("top1 {:#x}", stack.get_sp());
 
-    let random_str: &[usize; 2] = &[3703830112808742751usize, 7081108068768079778usize];
+    assert!(argv.len() > 0);
+    stack.push_str(&argv[0]);
+    let exec_fname = stack.get_sp();
+    error!("exec {:#x}", stack.get_sp());
+
+    for env in envp.iter().rev() {
+        stack.push_str(&env);
+    }
+    let mut env_start = stack.get_sp();
+    error!("envp {:#x}", stack.get_sp());
+
+    for arg in argv.iter().rev() {
+        stack.push_str(&arg);
+    }
+    let mut arg_start = stack.get_sp();
+    error!("argv {:#x}", stack.get_sp());
+
+    let random_str: &[usize; 2] = &[0, 0];
     stack.push(random_str.as_slice());
-    //let random_str_pos = stack.get_sp();
+    let u_rand_bytes = stack.get_sp();
+    error!("random {:#x} AT_VECTOR_SIZE {:#x}", stack.get_sp(), AT_VECTOR_SIZE);
 
-    let argv_slice: Vec<_> = args.iter().map(|arg| stack.push_str(arg)).collect();
+    // Note: Just for riscv64
+    const ELF_HWCAP: usize = 0x112d;
+    const ELF_EXEC_PAGESIZE: usize = 0x1000;
+    const CLOCKS_PER_SEC: usize = 0x64;
 
-    stack.push(&[null::<u8>(), null::<u8>()]);
-    /*
-    for (key, value) in auxv.iter() {
-        if (*key) == 25 {
-            // AT RANDOM
-            stack.push(&[*key as usize, random_str_pos]);
-        } else {
-            stack.push(&[*key as usize, *value]);
-        }
-    }
-    */
+    let mut saved_auxv: Vec<usize> = Vec::with_capacity(AT_VECTOR_SIZE);
+    new_aux_ent(&mut saved_auxv, AT_HWCAP, ELF_HWCAP);
+    new_aux_ent(&mut saved_auxv, AT_PAGESZ, ELF_EXEC_PAGESIZE);
+    new_aux_ent(&mut saved_auxv, AT_CLKTCK, CLOCKS_PER_SEC);
+    new_aux_ent(&mut saved_auxv, AT_PHDR, phdr_addr);
+    new_aux_ent(&mut saved_auxv, AT_PHENT, core::mem::size_of::<ProgramHeader>());
+    new_aux_ent(&mut saved_auxv, AT_PHNUM, e_phnum);
+    new_aux_ent(&mut saved_auxv, AT_BASE, interp_load_addr);
+    new_aux_ent(&mut saved_auxv, AT_FLAGS, 0);
+    new_aux_ent(&mut saved_auxv, AT_ENTRY, entry);
+    new_aux_ent(&mut saved_auxv, AT_RANDOM, u_rand_bytes);
+    new_aux_ent(&mut saved_auxv, AT_EXECFN, exec_fname);
+    new_aux_ent(&mut saved_auxv, AT_NULL, 0);
 
-    // Todo: refine the code.
-    // We can study from Linux's code just like:
-    //   'items = (argc + 1) + (envc + 1) + 1;'
-    //   'sp = STACK_ROUND(sp, items);'
-    // And then, store argc, pointers of argv&envs.
-    {
-        if !is_aligned(stack.get_sp(), 16) {
-            stack.push(&[null::<u8>()]);
-        }
-    }
-
-    // pointers to envs
-    stack.push(&[null::<u8>()]);
-    stack.push(&[null::<u8>()]);
-    // pointers to argv
-    stack.push(&[null::<u8>()]);
-    stack.push(argv_slice.as_slice());
-    // argc
-    stack.push(&[args.len()]);
-
-    let sp = stack.get_sp();
+    let mut sp = stack.get_sp() - saved_auxv.len() * 8;
+    error!("ei_index: {}; sp {:#x}", saved_auxv.len(), sp);
 
     // For X86_64, Stack must be aligned to 16-bytes.
     // E.g., there're some SSE instructions like 'movaps %xmm0,-0x70(%rbp)'.
     // When we call these, X86_64 requires that memory-alignment aligned to 16-bytes.
     // Or mmu causes #GP.
+    let items = (argv.len() + 1) + (envp.len() + 1) + 1;
+    sp = align_down(sp - items * 8, 16);
+    error!("sp {:#x}", sp);
+
+    // Todo: Check whether there's enough space for CURRENT stack.
+
+    let mut pos = sp;
+
+    /* Now, let's put argc (and argv, envp if appropriate) on the stack */
+    pos = put_user(argv.len(), pos);
+
+    /* Populate list of argv pointers back to argv strings. */
+    for _ in 0..argv.len() {
+        pos = put_user(arg_start, pos);
+        let len = strnlen_user(arg_start, MAX_ARG_STRLEN);
+        if len == 0 || len > MAX_ARG_STRLEN {
+            panic!("EINVAL");
+        }
+        arg_start += len;
+    }
+    pos = put_user(0, pos);
+
+    /* Populate list of envp pointers back to envp strings. */
+    for _ in 0..envp.len() {
+        error!("env: {:#x}", env_start);
+        pos = put_user(env_start, pos);
+        let len = strnlen_user(env_start, MAX_ARG_STRLEN);
+        if len == 0 || len > MAX_ARG_STRLEN {
+            panic!("EINVAL");
+        }
+        error!("len: {:#x}", len);
+        env_start += len;
+    }
+    pos = put_user(0, pos);
+
+    /* Put the elf_info on the stack in the right place.  */
+    pos = copy_to_user(pos, &saved_auxv);
+
+    show_mem(sp);
     assert!(is_aligned(sp, 16));
+    warn!("stack sp {:#x}", sp);
     Ok(sp)
+}
+
+fn show_mem(mut pos: usize) {
+    assert!(is_aligned(pos, 16));
+    for i in 0..4 {
+        let ptr = pos as *const usize;
+        unsafe {
+            error!("[{:x} {:x} {:x} {:x} {:x} {:x} {:x} {:x}]",
+               *ptr.add(0), *ptr.add(1), *ptr.add(2), *ptr.add(3),
+               *ptr.add(4), *ptr.add(5), *ptr.add(6), *ptr.add(7));
+        }
+        pos += 8 * 8;
+    }
+}
+
+fn put_user(val: usize, pos: usize) -> usize {
+    let ptr = pos as *mut usize;
+    unsafe { *ptr = val; }
+    pos + 8
+}
+
+fn strnlen_user(pos: usize, max: usize) -> usize {
+    use core::ffi::CStr;
+    use core::ffi::c_char;
+    unsafe {
+        let s = CStr::from_ptr(pos as *const c_char);
+        assert!(s.count_bytes() < max);
+        error!("s = {:?} {}", s, s.count_bytes());
+        s.count_bytes() + 1
+    }
+}
+
+fn copy_to_user(pos: usize, vsrc: &Vec<usize>) -> usize {
+    let ptr = pos as *mut usize;
+    unsafe {
+        core::slice::from_raw_parts_mut(ptr, vsrc.len())
+            .copy_from_slice(&vsrc);
+    }
+    pos + vsrc.len() * 8
 }
 
 pub fn init(cpu_id: usize, dtb_pa: usize) {

@@ -6,6 +6,9 @@
 extern crate axlog2;
 extern crate alloc;
 
+use alloc::{vec, vec::Vec};
+use alloc::string::String;
+
 use axerrno::{LinuxError, LinuxResult};
 #[cfg(target_arch = "riscv64")]
 use axhal::mem::phys_to_virt;
@@ -38,8 +41,6 @@ fn parse_dtb(_dtb_pa: usize) -> DtbInfo {
     #[cfg(target_arch = "riscv64")]
     {
         let mut dtb_info = DtbInfo::new();
-        use alloc::string::String;
-        use alloc::vec::Vec;
         let mut cb = |name: String,
                       _addr_cells: usize,
                       _size_cells: usize,
@@ -144,5 +145,9 @@ fn try_to_run_init_process(init_filename: &str) -> LinuxResult {
 
 fn run_init_process(init_filename: &str) -> LinuxResult {
     info!("run_init_process...");
-    exec::kernel_execve(init_filename)
+
+    let argv_init: Vec<String> = vec![init_filename.into()];
+    let envp_init: Vec<String> = vec!["HOME=/".into(), "TERM=linux".into()];
+
+    exec::kernel_execve(init_filename, argv_init, envp_init)
 }

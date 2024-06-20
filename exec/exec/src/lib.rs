@@ -4,6 +4,7 @@
 extern crate log;
 extern crate alloc;
 use alloc::vec;
+use alloc::vec::Vec;
 use alloc::string::String;
 
 use axerrno::LinuxResult;
@@ -11,14 +12,13 @@ use axhal::arch::start_thread;
 use mmap::{MAP_ANONYMOUS, MAP_FIXED, PROT_READ};
 use axtype::{PAGE_SIZE, get_user_str_vec};
 
-pub fn kernel_execve(filename: &str) -> LinuxResult {
+pub fn kernel_execve(filename: &str, argv: Vec<String>, envp: Vec<String>) -> LinuxResult {
     info!("kernel_execve... {}", filename);
 
     task::alloc_mm();
     let _ = setup_zero_page();
 
-    let args = vec![filename.into()];
-    let (entry, sp) = bprm_loader::execve(filename, 0, args)?;
+    let (entry, sp) = bprm_loader::execve(filename, 0, argv, envp)?;
 
     info!("start thread...");
     start_thread(task::current().pt_regs_addr(), entry, sp);
@@ -51,7 +51,7 @@ pub fn execve(path: &str, argv: usize, envp: usize) -> usize {
 
     // TODO: Move it into kernel_init().
     let _ = setup_zero_page();
-    let (entry, sp) = bprm_loader::execve(path, 0, args).expect("exec error!");
+    let (entry, sp) = bprm_loader::execve(path, 0, args, vec![]).expect("exec error!");
 
     info!("start thread...");
     start_thread(task::current().pt_regs_addr(), entry, sp);
