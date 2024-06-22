@@ -21,16 +21,15 @@ pub const EXECUTE: usize    = 1 << 2;
 //     axalloc::global_allocator().dealloc(ptr, layout)
 // }
 
-// pub fn get_brk() -> usize {
-//     use mmap::get_brk;
-//     get_brk()
-// }
-
-pub fn set_brk(brk: usize) {
-    use mmap::set_brk;
-    set_brk(brk);
+pub fn get_brk() -> usize {
+    let mut task = task::current();
+    task.as_task_mut().brk()
 }
 
+pub fn set_brk(brk: usize) {
+    let mut task = task::current();
+    task.as_task_mut().set_brk(brk);
+}
 
 pub fn alloc_pages(
     num_pages: usize, align_pow2: usize
@@ -40,7 +39,8 @@ pub fn alloc_pages(
 }
 
 pub fn map_region(va: usize, pa: usize, len: usize, flags: usize) {
-    use page_table::paging::map_region;
-    map_region(va, pa, len, flags).unwrap();
+    let mut task = task::current();
+    // 向当前任务的mm中进行map_region
+    task.as_task_mut().map_region(va, pa, len, flags)
 }
 

@@ -280,8 +280,11 @@ fn linux_syscall_chdir(args: SyscallArgs) -> usize {
 }
 
 fn linux_syscall_mprotect(args: SyscallArgs) -> usize {
+    debug!("linux_syscall_mprotect start");
     let [va, len, prot, ..] = args;
-    mmap::mprotect(va, len, prot)
+    let x = mmap::mprotect(va, len, prot);
+    debug!("linux_syscall_mprotect complete");
+    x
 }
 
 fn linux_syscall_set_tid_address(args: SyscallArgs) -> usize {
@@ -421,8 +424,11 @@ fn init_bytes_from_str(dst: &mut [u8], src: &str) {
 }
 
 fn linux_syscall_brk(args: SyscallArgs) -> usize {
+    debug!("linux syscall brk start");
     let va = align_up_4k(args[0]);
-    mmap::set_brk(va)
+    let res = mmap::set_brk(va);
+    debug!("linux syscall brk complete");
+    res
 }
 
 fn linux_syscall_rseq(_args: SyscallArgs) -> usize {

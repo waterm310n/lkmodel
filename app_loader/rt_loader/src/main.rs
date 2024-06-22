@@ -23,40 +23,43 @@ const PAGE_SIZE: usize  = 0x1000;
 const PAGE_SHIFT: usize = 12;
 
 // const PFLASH_START: usize = 0x22000000; // 启用分页feature之前使用0x22000000 
-const PFLASH_START: usize = 0xffff_ffc0_2200_0000; //启用分页
+const PFLASH_START: usize = 0xffff_ffc0_2200_0000; //启用分页后
 
 #[cfg_attr(feature = "axstd", no_mangle)]
 fn main() {
+    use riscv::register::satp;
+    println!("当前的satp {:#x?}", satp::read().bits());
+    let mut task = task::current();
+    {
+        let _ = NoPreempt::new();
+        task.as_task_mut().alloc_mm(); //
+    }
+    println!("alloc_mm(),当前的satp {:#x?}", satp::read().bits());
+    // println!("当前的satp {:#x?}", satp::read().bits());
     let mut pos = PFLASH_START;
-    let app_num = parse_literal_hex(pos);
+    let app_num = parse_literal_hex(pos); // 获取app个数
+    
     
     assert_eq!(app_num, 2);
     pos += 8;
 
-    for _ in 0..app_num {
-        let size = parse_literal_hex(pos);
+    for i in 0..app_num {
+        
+        println!("app pos: {:#X}", pos);
+        let size = parse_literal_hex(pos); // 解析app的大小
         println!("app size: {} {:#X}", size,size);
         pos += 8;
 
         let code = unsafe {
             core::slice::from_raw_parts(pos as *const u8, size)
         };
-        pos += size;
-        println!("app pos: {:#X}", pos);
-
-        println!("\n==============");
-        let (entry, end) = parse_elf(code);
-        println!("App: entry: {:#X},end : {:#X}", entry, end);
-        
-        // run_app(entry, end);
-        return ;
-        // thread::spawn(move || {
-        //     println!("\n==============");
-        //     let (entry, end) = parse_elf(code);
-        //     println!("App: entry: {:#X}", entry);
-
-        //     run_app(entry, end);
-        // });
+        pos += size; // 将pos指向下一个app的开头
+        println!("=====================================");
+        if i == 1 {
+            let (entry, end) = parse_elf(code);
+            println!("App: entry: {:#X},end : {:#X}", entry, end);
+            run_app(entry, end);
+        }
     }
 }
 
@@ -87,21 +90,18 @@ fn elfflags_to_mapflags(flags: usize) -> usize {
     mapflags
 }
 
-// 解析elf文件，同时返回程序的虚拟入口地址与end？（目前返回的虚拟地址）
+// 解析elf文件，同时返回程序的虚拟入口地址与结束的地址end
 fn parse_elf(code: &[u8]) -> (usize,usize){
     // 获取程序的虚拟地址对应的entry
     let file = ElfBytes::<AnyEndian>::minimal_parse(code).unwrap();
-    println!("e_entry: {:#X}", file.ehdr.e_entry);
+    // println!("e_entry: {:#X}", file.ehdr.e_entry);
 
     let phdrs: Vec<ProgramHeader> = file.segments().unwrap()
         .iter()
         .filter(|phdr|{phdr.p_type == PT_LOAD})
         .collect();
 
-    let mut end = 0;
-
-    let mut elf_bss: usize = 0;
-    let mut elf_brk: usize = 0;
+    let mut end = 0; // 记录文件的gp
 
     println!("There are {} PT_LOAD segments", phdrs.len());
     for phdr in &phdrs {
@@ -128,8 +128,8 @@ fn parse_elf(code: &[u8]) -> (usize,usize){
         
         // Whatever we need vm::WRITE for initialize segment.
         // Fix it in future.
-        vm::map_region(va, pa, num_pages << PAGE_SHIFT, flags|vm::WRITE);
-
+        vm::map_region(va, pa, num_pages << PAGE_SHIFT, flags);
+        
         // 将数据从文件复制到内存中
         let fdata = file.segment_data(&phdr).unwrap();
         let mdata = unsafe {
@@ -144,9 +144,9 @@ fn parse_elf(code: &[u8]) -> (usize,usize){
                 core::slice::from_raw_parts_mut((phdr.p_vaddr+phdr.p_filesz) as *mut u8, (phdr.p_memsz - phdr.p_filesz) as usize)
             };
             edata.fill(0);
-            println!("清空bss段大小 edata_sz: {:#x}", edata.len());
+            println!("edata_sz: {:#x}", edata.len());
         }
-        
+
         if end < va_end {
             end = va_end;
         }
@@ -155,56 +155,70 @@ fn parse_elf(code: &[u8]) -> (usize,usize){
     (file.ehdr.e_entry as usize, end)
 }
 
-// fn run_app(entry: usize, end: usize) {
+fn run_app(entry: usize, end: usize) {
+
+
+    // 获取内核栈指针
+    let mut ksp: usize;
+    unsafe {
+        core::arch::asm!(
+            "mv {0}, sp", // 将当前栈指针存储到 `sp` 变量中
+            out(reg) ksp // `out(reg)` 指示 `sp` 是一个输出寄存器
+        );
+    }
+    println!("当前内核栈指针地址: {:#x}", ksp);
+
     
-//     // 分配一页作为用户栈?
-//     const TASK_SIZE: usize = 0x40_0000_0000;
-//     let pa = vm::alloc_pages(1, PAGE_SIZE_4K);
-//     let va = TASK_SIZE - PAGE_SIZE_4K;
-//     println!("va: {:#x} pa: {:#x}", va, pa);
-//     vm::map_region(va, pa, PAGE_SIZE_4K, vm::READ | vm::WRITE);
-//     let sp = TASK_SIZE - 32;
-//     let stack = unsafe {
-//         core::slice::from_raw_parts_mut(
-//             sp as *mut usize, 4
-//         )
-//     };
+    // 分配一页作为用户栈?分配一页总是不够用，直接分配20页！
+    const TASK_SIZE: usize = 0x40_0000_0000;
+    const USER_STACK_NUM_PAGE:usize = 20; // 用户栈的内存页数量
+    let pa = vm::alloc_pages(USER_STACK_NUM_PAGE, PAGE_SIZE_4K);
+    let va = TASK_SIZE - USER_STACK_NUM_PAGE*PAGE_SIZE_4K;
+    // println!("va: {:#x} pa: {:#x}", va, pa);
+    vm::map_region(va, pa, USER_STACK_NUM_PAGE*PAGE_SIZE_4K, vm::READ | vm::WRITE | vm::EXECUTE);
+    let sp = TASK_SIZE - 32;
+    let stack = unsafe {
+        core::slice::from_raw_parts_mut(
+            sp as *mut usize, 4
+        )
+    };
+
+    println!("当前用户栈指针地址: {:#x}",sp);
+    println!("{:p}",&stack[3]);
+    stack[0] = 0;
+    stack[1] = TASK_SIZE - 16;
+    stack[2] = 0;
+    stack[3] = 0;
     
-//     stack[0] = 0;
-//     stack[1] = TASK_SIZE - 16;
-//     stack[2] = 0;
-//     stack[3] = 0;
+    // println!("set brk to {:#}",end);
+    // vm::set_brk(end);
 
-//     // 在应用启动前创建
-//     let mut task = task::current();
-//     {
-//         let _ = NoPreempt::new();
-//         task.as_task_mut().alloc_mm();
-//     }
+    // let pa = vm::alloc_pages(4, PAGE_SIZE_4K);
+    // vm::map_region(end, pa, 4*PAGE_SIZE_4K, vm::READ | vm::WRITE);
+    // let pa = vm::alloc_pages(4, PAGE_SIZE_4K);
+    // vm::map_region(0x7E000, pa, 4*PAGE_SIZE_4K, vm::READ);
+    // println!("### app end: {:#X}; {:#X}", end, vm::get_brk());
 
-//     println!("set brk...");
-//     vm::set_brk(end);
+    // setup_zero_page();
 
-//     let pa = vm::alloc_pages(4, PAGE_SIZE_4K);
-//     vm::map_region(end, pa, 4*PAGE_SIZE_4K, vm::READ | vm::WRITE);
-//     // println!("### app end: {:#X}; {:#X}", end, vm::get_brk());
+    use riscv::register::sepc;
+    println!("当前epc:{:#x}",sepc::read());
 
-//     setup_zero_page();
+    unsafe { core::arch::asm!("
+        jalr    t2
+        j       .",
+        in("t0") entry,
+        in("t1") sp,
+        in("t2") start_app,
+    )};
 
-//     println!("Execute app ... at entry {:#x}",entry);
+    extern "C" {
+        fn start_app();
+    }
+}
 
-//     // execute app
-    
-//     unsafe { core::arch::asm!("
-//         jalr t0
-//         ",
-//         in("t0") entry,
-//     )};
-
-// }
-
-// fn setup_zero_page() {
-//     // 分配一页用作Zero
-//     let pa = vm::alloc_pages(1, PAGE_SIZE_4K);
-//     vm::map_region(0x0, pa, PAGE_SIZE_4K, vm::READ);
-// }
+fn setup_zero_page() {
+    // 分配一页用作Zero
+    let pa = vm::alloc_pages(1, PAGE_SIZE_4K);
+    vm::map_region(0x0, pa, PAGE_SIZE_4K, vm::READ);
+}
