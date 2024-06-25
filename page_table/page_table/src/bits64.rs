@@ -7,6 +7,7 @@ use memory_addr::{PhysAddr, VirtAddr, PAGE_SIZE_4K};
 
 use crate::{GenericPTE, PagingIf, PagingMetaData};
 use crate::{MappingFlags, PageSize, PagingError, PagingResult};
+use axhal::mem::{virt_to_phys, phys_to_virt};
 
 const ENTRY_COUNT: usize = 512;
 
@@ -210,11 +211,24 @@ impl<M: PagingMetaData, PTE: GenericPTE, IF: PagingIf> PageTable64<M, PTE, IF> {
         Ok(())
     }
 
+    pub fn map_region_and_fill(
+        &mut self,
+        va: VirtAddr,
+        size: usize,
+        flags: MappingFlags,
+    ) -> PagingResult {
+        let num_pages = size / PAGE_SIZE_4K;
+        let va_new: usize = axalloc::global_allocator().alloc_pages(num_pages, PAGE_SIZE_4K).unwrap();
+        let va_new = VirtAddr::from(va_new);
+        let pa: PhysAddr = virt_to_phys(va_new.into());
+        self.map_region(va, pa, size, flags, true)
+    }
+
     /// Unmap a contiguous virtual memory region.
     ///
     /// The region must be mapped before using [`PageTable64::map_region`], or
     /// unexpected behaviors may occur.
-    pub fn unmap_region(&mut self, vaddr: VirtAddr, size: usize) -> PagingResult {
+    pub fn unmap_region(&mut self, vaddr: VirtAddr, size: usize) -> PagingResult<PhysAddr> {
         trace!(
             "unmap_region({:#x}) [{:#x}, {:#x})",
             self.root_paddr(),
@@ -223,14 +237,33 @@ impl<M: PagingMetaData, PTE: GenericPTE, IF: PagingIf> PageTable64<M, PTE, IF> {
         );
         let mut vaddr = vaddr;
         let mut size = size;
+        assert!(size > 0);
+        let mut first_page = true;
+        let mut paddr = 0.into();
         while size > 0 {
-            let (_, page_size) = self
+            let (pa, page_size) = self
                 .unmap(vaddr)
                 .inspect_err(|e| error!("failed to unmap page: {:#x?}, {:?}", vaddr, e))?;
             assert!(vaddr.is_aligned(page_size));
             assert!(page_size as usize <= size);
             vaddr += page_size as usize;
             size -= page_size as usize;
+            if first_page {
+                paddr = pa;
+                first_page = false;
+            }
+        }
+        Ok(paddr)
+    }
+
+    pub fn unmap_region_and_free(&mut self, vaddr: VirtAddr, size: usize) -> PagingResult {
+        let mut num_pages = size / PAGE_SIZE_4K;
+        let pa = self.unmap_region(vaddr, size)?;
+        let mut va = phys_to_virt(pa);
+        while num_pages > 0 {
+            axalloc::global_allocator().dealloc_pages(va.as_usize(), 1);
+            va += PAGE_SIZE_4K;
+            num_pages -= 1;
         }
         Ok(())
     }

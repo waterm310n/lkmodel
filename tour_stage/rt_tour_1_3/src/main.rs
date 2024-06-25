@@ -6,7 +6,7 @@ extern crate axlog2;
 
 use core::panic::PanicInfo;
 use core::{mem, str, slice};
-use axhal::mem::{phys_to_virt, virt_to_phys, PAGE_SIZE_4K};
+use axhal::mem::{phys_to_virt, PAGE_SIZE_4K};
 use axhal::arch::write_page_table_root0;
 use page_table::paging::pgd_alloc;
 use page_table::paging::MappingFlags;
@@ -37,10 +37,8 @@ pub extern "Rust" fn runtime_main(cpu_id: usize, dtb_pa: usize) {
     }
 
     // Makesure that we can map a user-page and read/write/execute.
-    let va: usize = axalloc::global_allocator().alloc_pages(1, PAGE_SIZE_4K).unwrap();
-    let pa = virt_to_phys(va.into());
     let flags = MappingFlags::READ | MappingFlags::WRITE | MappingFlags::EXECUTE | MappingFlags::USER;
-    pgd.map_region(USER_APP_ENTRY.into(), pa.into(), PAGE_SIZE_4K, flags, true).unwrap();
+    pgd.map_region_and_fill(USER_APP_ENTRY.into(), PAGE_SIZE_4K, flags).unwrap();
     info!("Map user page: {:#x} ok!", USER_APP_ENTRY);
 
     let dwords = unsafe {
@@ -52,7 +50,7 @@ pub extern "Rust" fn runtime_main(cpu_id: usize, dtb_pa: usize) {
     for dw in dwords {
         assert_eq!(*dw, 0xAABBCCDD);
     }
-    let _ = pgd.unmap_region(USER_APP_ENTRY.into(), PAGE_SIZE_4K);
+    pgd.unmap_region_and_free(USER_APP_ENTRY.into(), PAGE_SIZE_4K).unwrap();
 
     info!("[rt_tour_1_3]: ok!");
     axhal::misc::terminate();
