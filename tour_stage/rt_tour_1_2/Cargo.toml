@@ -1,10 +1,10 @@
 [package]
-name = "rt_tour_1_1"
+name = "rt_tour_1_2"
 version = "0.1.0"
 edition = "2021"
 
 [dependencies]
 arch_boot = { git = "ssh://git@github.com/shilei-massclouds/arch_boot.git" }
 axhal = { git = "ssh://git@github.com/shilei-massclouds/axhal" }
-early_console = { git = "ssh://git@github.com/shilei-massclouds/early_console.git" }
 axlog2 = { git = "ssh://git@github.com/shilei-massclouds/axlog2" }
+axalloc = { git = "ssh://git@github.com/shilei-massclouds/axalloc" }
