@@ -37,6 +37,9 @@ use axhal::mem::{memory_regions, phys_to_virt};
 #[doc(no_inline)]
 pub use page_table_entry::{GenericPTE, MappingFlags};
 
+#[cfg(not(pflash))]
+const PFLASH_START: usize = 0x2200_0000;
+
 /// The error type for page table operation failures.
 #[derive(Debug)]
 pub enum PagingError {
@@ -133,6 +136,9 @@ pub fn init(cpu_id: usize, _dtb_pa: usize) {
     if axhal::cpu::_this_cpu_is_bsp() {
         let mut kernel_page_table = paging::PageTable::try_new().unwrap();
         for r in memory_regions() {
+            if check_pflash(r.paddr.into(), r.size.into()) {
+                continue;
+            }
             kernel_page_table.map_region(
                 phys_to_virt(r.paddr),
                 r.paddr,
@@ -144,5 +150,20 @@ pub fn init(cpu_id: usize, _dtb_pa: usize) {
         paging::setup_page_table_root(kernel_page_table);
     } else {
         paging::reuse_page_table_root();
+    }
+}
+
+#[cfg(pflash)]
+fn check_pflash(_pa: usize, _size: usize) -> bool {
+    false
+}
+
+#[cfg(not(pflash))]
+fn check_pflash(pa: usize, size: usize) -> bool {
+    if pa == PFLASH_START {
+        info!("Disable PFlash region: [PA:{:#x} - PA:{:#x}]", pa, pa+size);
+        true
+    } else {
+        false
     }
 }

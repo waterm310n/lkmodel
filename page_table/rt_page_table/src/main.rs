@@ -7,8 +7,11 @@ use axhal::mem::phys_to_virt;
 #[macro_use]
 extern crate axlog2;
 
-#[cfg(target_arch = "riscv64")]
+#[cfg(all(pflash, target_arch = "riscv64"))]
 const TEST_ADDRESSES: [usize; 2] = [0x1000_1000, 0x2200_0000];
+
+#[cfg(all(not(pflash), target_arch = "riscv64"))]
+const TEST_ADDRESSES: [usize; 1] = [0x1000_1000];
 
 #[cfg(target_arch = "x86_64")]
 const TEST_ADDRESSES: [usize; 1] = [0xfec00000];
@@ -36,5 +39,6 @@ pub extern "Rust" fn runtime_main(cpu_id: usize, dtb_pa: usize) {
 
 #[panic_handler]
 pub fn panic(info: &PanicInfo) -> ! {
+    error!("{:?}", info);
     arch_boot::panic(info)
 }
