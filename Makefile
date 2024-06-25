@@ -43,6 +43,7 @@ BLK ?= n
 NET ?= n
 GRAPHIC ?= n
 BUS ?= mmio
+PFLASH ?= n
 
 DISK_IMG ?= disk.img
 QEMU_LOG ?= y
@@ -52,6 +53,7 @@ INIT_CMD ?=
 GLOBAL_CFG ?=
 LTP ?= /tmp
 DUMP_OUTPUT ?= n
+PFLASH_IMG ?= pflash.img
 
 # Network options
 IP ?= 10.0.2.15
@@ -232,6 +234,10 @@ ifeq ($(wildcard $(DISK_IMG)),)
 else
 	$(call $(ARCH)_install_apps,$(DISK_IMG))
 endif
+
+mk_pflash:
+	@rm -f $(PFLASH_IMG)
+	$(call mk_pflash,$(PFLASH_IMG))
 
 clean: clean_c
 	rm -rf $(APP)/*.bin $(APP)/*.elf $(APP)/*.lds

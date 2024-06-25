@@ -254,7 +254,7 @@ fn build() -> Result<()> {
     let root = default_root().expect("Please set root by 'chroot'.");
     let arch = default_arch();
     let conf = parse_conf()?;
-    let has_blk = blk_config(&conf);
+    let has_blk = check_config(&conf, "blk");
     let global_cfg = _global_cfg(&conf);
     let mut child = process::Command::new("make")
         .arg(format!("A={}", root))
@@ -270,7 +270,8 @@ fn run(args: &RunArgs, dump: bool) -> Result<()> {
     let root = default_root().expect("Please set root by 'chroot'.");
     let arch = default_arch();
     let conf = parse_conf()?;
-    let has_blk = blk_config(&conf);
+    let has_blk = check_config(&conf, "blk");
+    let has_pflash = check_config(&conf, "pflash");
     let global_cfg = _global_cfg(&conf);
     let default_init = String::from("/sbin/init");
     let init_cmd = args.process.as_ref().unwrap_or(&default_init);
@@ -279,6 +280,7 @@ fn run(args: &RunArgs, dump: bool) -> Result<()> {
         .arg(format!("A={}", root))
         .arg(format!("ARCH={}", arch))
         .arg(format!("BLK={}", has_blk))
+        .arg(format!("PFLASH={}", has_pflash))
         .arg(format!("GLOBAL_CFG={}", global_cfg))
         .arg(format!("INIT_CMD={}", init_cmd))
         .arg(format!("DUMP_OUTPUT={}", dump))
@@ -323,8 +325,8 @@ fn default_root() -> Option<String> {
     }).ok()
 }
 
-fn blk_config(conf: &BTreeMap<String, String>) -> String {
-    if let Some(v) = conf.get("blk") {
+fn check_config(conf: &BTreeMap<String, String>, key: &str) -> String {
+    if let Some(v) = conf.get(key) {
         if v == "y" {
             return v.clone();
         }
@@ -401,6 +403,7 @@ fn chroot(args: &RootArgs) -> Result<()> {
 }
 
 fn prepare() -> Result<()> {
+    let arch = default_arch();
     let conf = parse_conf()?;
     if let Some(v) = conf.get("blk") {
         assert_eq!(v, "y");
@@ -410,7 +413,6 @@ fn prepare() -> Result<()> {
             child.wait()?;
         }
 
-        let arch = default_arch();
         let mut child = process::Command::new("make")
             .arg("-C")
             .arg("./btp")
@@ -429,6 +431,14 @@ fn prepare() -> Result<()> {
             .arg("install_apps")
             .arg(format!("ARCH={}", arch))
             .arg(format!("LTP={}", ltp_top))
+            .spawn()?;
+        child.wait()?;
+    }
+    if let Some(v) = conf.get("pflash") {
+        assert_eq!(v, "y");
+        let mut child = process::Command::new("make")
+            .arg("mk_pflash")
+            .arg(format!("ARCH={}", arch))
             .spawn()?;
         child.wait()?;
     }
@@ -457,7 +467,7 @@ fn parse_conf() -> Result<BTreeMap<String, String>> {
     let mut conf: BTreeMap<String, String> = BTreeMap::new();
     for line in content.split('\n') {
         let line = line.trim();
-        if line.is_empty() {
+        if line.is_empty() || line.starts_with("#") {
             continue;
         }
         let (k, v) = line.split_once('=').unwrap();

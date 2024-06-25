@@ -7,6 +7,7 @@ members = [
     "axhal/rt_axhal",
     "axalloc/rt_axalloc",
     "page_table/rt_page_table",
+    "pflash/rt_pflash",
     "mm/rt_mm",
     "fork/rt_fork",
     "exec/rt_exec",
@@ -24,6 +25,7 @@ members = [
     "mmap/rt_mmap",
     "fstree/rt_fstree",
     "macrokernel/rt_macrokernel",
+    "payload/origin",
 ]
 
 [profile.release]
@@ -89,6 +91,10 @@ memory_addr = { path = "./memory_addr/memory_addr" }
 page_table = { path = "./page_table/page_table" }
 page_table_entry = { path = "./page_table/page_table_entry" }
 rt_page_table = { path = "./page_table/rt_page_table" }
+
+[patch."ssh://git@github.com/shilei-massclouds/pflash"]
+pflash = { path = "./pflash/pflash" }
+rt_pflash = { path = "./pflash/rt_pflash" }
 
 [patch."ssh://git@github.com/shilei-massclouds/percpu2"]
 percpu2 = { path = "./percpu2/percpu2" }

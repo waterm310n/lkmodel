@@ -1,0 +1,9 @@
+[package]
+name = "pflash"
+version = "0.1.0"
+edition = "2021"
+
+[dependencies]
+axconfig = { git = "ssh://git@github.com/shilei-massclouds/axconfig" }
+page_table = { git = "ssh://git@github.com/shilei-massclouds/page_table" }
+axtype = { git = "ssh://git@github.com/shilei-massclouds/axtype" }

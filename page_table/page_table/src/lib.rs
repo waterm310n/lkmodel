@@ -124,9 +124,11 @@ impl From<PageSize> for usize {
     }
 }
 
-pub fn init() {
+pub fn init(cpu_id: usize, _dtb_pa: usize) {
     axconfig::init_once!();
     info!("Initialize kernel page table...");
+    axhal::arch_init_early(cpu_id);
+    axalloc::init();
 
     if axhal::cpu::_this_cpu_is_bsp() {
         let mut kernel_page_table = paging::PageTable::try_new().unwrap();

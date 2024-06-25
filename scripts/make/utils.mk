@@ -76,3 +76,14 @@ define x86_64_install_apps
   @sudo umount ./mnt
   @rm -rf mnt
 endef
+
+define mk_pflash
+  @RUSTFLAGS="" cargo build -p origin  --target riscv64gc-unknown-none-elf --release
+  @rust-objcopy --binary-architecture=riscv64 --strip-all -O binary ./target/riscv64gc-unknown-none-elf/release/origin /tmp/origin.bin
+  @printf "pfld\00\00\00\01" > /tmp/prefix.bin
+  @printf "%08x" `stat -c "%s" /tmp/origin.bin` | xxd -r -ps > /tmp/size.bin
+  @cat /tmp/prefix.bin /tmp/size.bin > /tmp/head.bin
+  @dd if=/dev/zero of=./$(1) bs=1M count=32
+  @dd if=/tmp/head.bin of=./$(1) conv=notrunc
+  @dd if=/tmp/origin.bin of=./$(1) seek=16 obs=1 conv=notrunc
+endef
