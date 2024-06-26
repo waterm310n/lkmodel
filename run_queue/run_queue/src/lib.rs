@@ -54,6 +54,11 @@ pub fn spawn_task(tid: Tid, entry: Option<*mut dyn FnOnce()>) -> SchedInfo {
     sched_info
 }
 
+pub fn activate_task(task: Arc<SchedInfo>) {
+    let rq = task_rq(&task);
+    rq.lock().activate_task(task.clone());
+}
+
 /// Handles periodic timer ticks for the task manager.
 ///
 /// For example, advance scheduler states, checks timed events, etc.

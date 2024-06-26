@@ -10,15 +10,12 @@ mod userboot;
 mod trap;
 
 use core::panic::PanicInfo;
-use alloc::sync::Arc;
-use axhal::arch::write_page_table_root0;
-use page_table::paging::pgd_alloc;
-use spinbase::SpinNoIrq;
+use taskctx::TaskState;
 
 #[no_mangle]
 pub extern "Rust" fn runtime_main(cpu_id: usize, dtb_pa: usize) {
     axlog2::init("debug");
-    info!("[rt_tour_2_1]: ...");
+    info!("[rt_tour_2_2]: ...");
 
     // Setup simplest trap framework.
     trap::init();
@@ -26,23 +23,23 @@ pub extern "Rust" fn runtime_main(cpu_id: usize, dtb_pa: usize) {
     // Prepare for user app to startup.
     userboot::init(cpu_id, dtb_pa);
 
-    // Alloc new pgd and setup.
-    let pgd = Arc::new(SpinNoIrq::new(pgd_alloc()));
-    unsafe {
-        write_page_table_root0(pgd.lock().root_paddr().into());
-    }
+    // Startup a kernel thread.
+    run_queue::init(cpu_id, dtb_pa);
 
-    taskctx::init(cpu_id, dtb_pa);
-    let mut ctx = taskctx::current_ctx();
-    assert!(ctx.pgd.is_none());
-    ctx.as_ctx_mut().set_mm(1, pgd);
+    let ctx = run_queue::spawn_task_raw(2, || {
+        info!("Wander kernel-thread is running ..");
+        let ctx = taskctx::current_ctx();
+        ctx.set_state(TaskState::Dead);
+        info!("Wander kernel-thread yields itself ..");
+        run_queue::yield_now();
+    });
+    run_queue::activate_task(ctx.clone());
+    run_queue::yield_now();
 
     // Load userland app into pgd.
     userboot::load();
-
-    // Load userland app into pgd.
+    // Start userland app.
     userboot::start();
-
     userboot::cleanup();
 
     unreachable!();

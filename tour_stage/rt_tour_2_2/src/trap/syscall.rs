@@ -27,7 +27,7 @@ fn do_syscall(sysno: usize, arg0: usize) -> usize {
         },
         SYS_EXIT => {
             info!("Syscall(Exit): system is exiting ...");
-            info!("[rt_tour_2_1]: ok!");
+            info!("[rt_tour_2_2]: ok!");
             axhal::misc::terminate();
         },
         _ => {
