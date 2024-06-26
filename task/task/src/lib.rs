@@ -188,11 +188,14 @@ impl TaskStruct {
         self.mm.as_mut().map(|mm| {
             let locked_mm = mm.lock();
             locked_mm.map_region(va, pa, len, flags);
-            if va == 0x7e000 {
-                use mm::VmAreaStruct;
-                let vma = VmAreaStruct::new(va, va + len, 0, None, 0);
-                mm.lock().vmas.insert(va, vma);
-            }
+            // if va == 0x7e000 {
+            //     use mm::VmAreaStruct;
+            //     let vma = VmAreaStruct::new(va, va + len, 0, None, 0);
+            //     mm.lock().vmas.insert(va, vma);
+            // }
+            use mm::VmAreaStruct;
+            let vma = VmAreaStruct::new(va, va + len, 0, None, 0);
+            mm.lock().vmas.insert(va, vma);
         });
     }
 

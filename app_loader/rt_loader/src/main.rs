@@ -55,11 +55,11 @@ fn main() {
         };
         pos += size; // 将pos指向下一个app的开头
         println!("=====================================");
-        if i == 1 {
+        // if i == 0 {
             let (entry, end) = parse_elf(code);
             println!("App: entry: {:#X},end : {:#X}", entry, end);
             run_app(entry, end);
-        }
+        // }
     }
 }
 
@@ -190,16 +190,14 @@ fn run_app(entry: usize, end: usize) {
     stack[2] = 0;
     stack[3] = 0;
     
-    // println!("set brk to {:#}",end);
-    // vm::set_brk(end);
+    println!("set brk to {:#}",end);
+    vm::set_brk(end);
 
     // let pa = vm::alloc_pages(4, PAGE_SIZE_4K);
     // vm::map_region(end, pa, 4*PAGE_SIZE_4K, vm::READ | vm::WRITE);
-    // let pa = vm::alloc_pages(4, PAGE_SIZE_4K);
-    // vm::map_region(0x7E000, pa, 4*PAGE_SIZE_4K, vm::READ);
-    // println!("### app end: {:#X}; {:#X}", end, vm::get_brk());
+    println!("### app end: {:#X}; {:#X}", end, vm::get_brk());
 
-    // setup_zero_page();
+    setup_zero_page();
 
     use riscv::register::sepc;
     println!("当前epc:{:#x}",sepc::read());
