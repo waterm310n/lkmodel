@@ -33,7 +33,7 @@ members = [
     "tour_stage/rt_tour_1_3",
     "tour_stage/rt_tour_1_4",
     "tour_stage/rt_tour_1_5",
-#"tour_stage/rt_tour_1_6",
+    "tour_stage/rt_tour_1_6",
 ]
 
 [profile.release]
@@ -237,4 +237,4 @@ rt_tour_1_2 = { path = "./tour_stage/rt_tour_1_2" }
 rt_tour_1_3 = { path = "./tour_stage/rt_tour_1_3" }
 rt_tour_1_4 = { path = "./tour_stage/rt_tour_1_4" }
 rt_tour_1_5 = { path = "./tour_stage/rt_tour_1_5" }
-#rt_tour_1_6 = { path = "./tour_stage/rt_tour_1_6" }
+rt_tour_1_6 = { path = "./tour_stage/rt_tour_1_6" }
