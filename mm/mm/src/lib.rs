@@ -166,6 +166,7 @@ impl MmStruct {
     }
 
     pub fn unmap_region(&self, va: usize, len: usize) -> PagingResult {
-        self.pgd.lock().unmap_region(va.into(), len)
+        self.pgd.lock().unmap_region(va.into(), len)?;
+        Ok(())
     }
 }

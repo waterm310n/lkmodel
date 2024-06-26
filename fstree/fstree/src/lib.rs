@@ -179,7 +179,7 @@ pub fn init(cpu_id: usize, dtb_pa: usize) {
 
     axhal::arch_init_early(cpu_id);
     axalloc::init();
-    page_table::init();
+    page_table::init(cpu_id, dtb_pa);
 
     spinpreempt::init(cpu_id, dtb_pa);
 

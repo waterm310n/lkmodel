@@ -575,7 +575,7 @@ pub fn init(cpu_id: usize, dtb_pa: usize) {
     axlog2::init(option_env!("AX_LOG").unwrap_or(""));
     axhal::arch_init_early(cpu_id);
     axalloc::init();
-    page_table::init();
+    page_table::init(cpu_id, dtb_pa);
     axhal::platform_init();
     task::init(cpu_id, dtb_pa);
     user_stack::init();
