@@ -1,0 +1,18 @@
+[package]
+name = "rt_tour_5_4"
+version = "0.1.0"
+edition = "2021"
+
+# See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
+
+#[features]
+#default = ["axhal/irq", "percpu2", "preempt_guard"]
+
+[dependencies]
+arch_boot = { git = "ssh://git@github.com/shilei-massclouds/arch_boot" }
+axlog2 = { git = "ssh://git@github.com/shilei-massclouds/axlog2" }
+axtrap = { git = "ssh://git@github.com/shilei-massclouds/axtrap" }
+userboot = { git = "ssh://git@github.com/shilei-massclouds/userboot" }
+
+[target.'cfg(target_arch = "x86_64")'.dependencies]
+raw-cpuid = "11.0"
