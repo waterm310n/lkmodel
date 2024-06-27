@@ -126,9 +126,9 @@ impl AxRunQueue {
 
         // we must not block current task with preemption disabled.
         assert!(curr.can_preempt(1));
+        */
 
         curr.set_state(TaskState::Blocked);
-        */
         wait_queue_push(curr.clone());
         self.resched(false);
     }
