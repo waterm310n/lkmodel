@@ -51,6 +51,26 @@ pub extern "Rust" fn runtime_main(cpu_id: usize, dtb_pa: usize) {
 
     let ctx = run_queue::spawn_task_raw(2, PF_KTHREAD, || {
         info!("Wander kernel-thread is running ..");
+
+        // Alloc new pgd and setup.
+        let pgd = Arc::new(SpinNoIrq::new(pgd_alloc()));
+        unsafe {
+            write_page_table_root0(pgd.lock().root_paddr().into());
+        }
+
+        let mut ctx = taskctx::current_ctx();
+        assert!(ctx.pgd.is_none());
+        ctx.as_ctx_mut().set_mm(2, pgd.clone());
+
+        let flags = MappingFlags::READ | MappingFlags::WRITE | MappingFlags::EXECUTE | MappingFlags::USER;
+        pgd.lock().map_region_and_fill(USER_APP_ENTRY.into(), PAGE_SIZE_4K, flags).unwrap();
+        info!("Wanderer: Map user page: {:#x} ok!", USER_APP_ENTRY);
+
+        // Try to access user app code area
+        let size = 16;
+        let run_code = unsafe { core::slice::from_raw_parts_mut(USER_APP_ENTRY as *mut u8, size) };
+        info!("Try to access app code: {:?}", &run_code[0..size]);
+
         info!("Wander kernel-thread waits for app to be ready ..");
         while !(*APP_READY.lock()) {
             run_queue::yield_now();
