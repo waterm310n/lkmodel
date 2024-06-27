@@ -43,7 +43,7 @@ members = [
     "tour_stage/rt_tour_2_5",
     "tour_stage/rt_tour_2_6",
 
-#"tour_stage/rt_tour_3_1",
+    "tour_stage/rt_tour_3_1",
     "tour_stage/rt_tour_3_2",
     "tour_stage/rt_tour_3_3",
     "tour_stage/rt_tour_3_4",
@@ -261,7 +261,7 @@ rt_tour_2_4 = { path = "./tour_stage/rt_tour_2_4" }
 rt_tour_2_5 = { path = "./tour_stage/rt_tour_2_5" }
 rt_tour_2_6 = { path = "./tour_stage/rt_tour_2_6" }
 
-#rt_tour_3_1 = { path = "./tour_stage/rt_tour_3_1" }
+rt_tour_3_1 = { path = "./tour_stage/rt_tour_3_1" }
 rt_tour_3_2 = { path = "./tour_stage/rt_tour_3_2" }
 rt_tour_3_3 = { path = "./tour_stage/rt_tour_3_3" }
 rt_tour_3_4 = { path = "./tour_stage/rt_tour_3_4" }
