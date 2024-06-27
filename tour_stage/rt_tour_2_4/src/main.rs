@@ -10,7 +10,7 @@ mod userboot;
 mod trap;
 
 use core::panic::PanicInfo;
-use trap::PERIODIC_INTERVAL_NANOS;
+use trap::{PERIODIC_INTERVAL_NANOS, get_ticks};
 
 #[no_mangle]
 pub extern "Rust" fn runtime_main(cpu_id: usize, dtb_pa: usize) {
@@ -47,13 +47,13 @@ pub extern "Rust" fn runtime_main(cpu_id: usize, dtb_pa: usize) {
         info!("Wander kernel-thread is running ..");
         info!("Wander kernel-thread enters infinite waiting period ..");
         loop {
-            static mut NEXT_DEADLINE: u64 = 0;
-            let now_ns = axhal::time::current_time_nanos();
+            static mut NEXT_DEADLINE: usize = 0;
+            let ticks = get_ticks();
             let deadline = unsafe { NEXT_DEADLINE };
-            if now_ns >= deadline {
-                info!("Wander is waiting infinitely .. [{:#x}]", now_ns);
+            if ticks >= deadline {
+                info!("Wander is waiting infinitely .. [{:#x}]", ticks);
                 unsafe {
-                    NEXT_DEADLINE = now_ns + PERIODIC_INTERVAL_NANOS;
+                    NEXT_DEADLINE = ticks + PERIODIC_INTERVAL_NANOS as usize;
                 }
             }
         }

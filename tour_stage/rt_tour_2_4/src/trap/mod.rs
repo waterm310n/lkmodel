@@ -9,7 +9,7 @@ mod syscall;
 mod excp;
 mod irq;
 
-pub use irq::PERIODIC_INTERVAL_NANOS;
+pub use irq::{PERIODIC_INTERVAL_NANOS, get_ticks};
 
 #[macro_use]
 mod macros;
