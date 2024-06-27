@@ -22,6 +22,9 @@ use lazy_init::LazyInit;
 
 pub const THREAD_SIZE: usize = 32 * PAGE_SIZE_4K;
 
+/* I am a kernel thread */
+pub const PF_KTHREAD: usize = 0x00200000;
+
 pub type Tid = usize;
 
 pub struct TaskStack {
@@ -76,6 +79,8 @@ pub struct SchedInfo {
     tid:    Tid,
     tgid:   Tid,
 
+    pub flags: usize,
+
     pub real_parent:   Option<Arc<SchedInfo>>,
     pub group_leader:  Option<Arc<SchedInfo>>,
 
@@ -110,6 +115,7 @@ impl SchedInfo {
             tid: 0,
             tgid: 0,
 
+            flags: 0,
             real_parent: None,
             group_leader: None,
 

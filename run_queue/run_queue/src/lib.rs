@@ -5,7 +5,7 @@ use alloc::sync::Arc;
 use taskctx::CtxRef;
 use crate::run_queue::RUN_QUEUE;
 use spinbase::SpinNoIrq;
-use taskctx::{Tid, SchedInfo};
+use taskctx::{Tid, SchedInfo, TaskState, PF_KTHREAD};
 
 #[macro_use]
 extern crate log;
@@ -37,17 +37,18 @@ pub fn force_unlock() {
     unsafe { RUN_QUEUE.force_unlock() }
 }
 
-pub fn spawn_task_raw<F>(tid: Tid, f: F) -> Arc<SchedInfo>
+pub fn spawn_task_raw<F>(tid: Tid, flags: usize, f: F) -> Arc<SchedInfo>
 where
     F: FnOnce() + 'static
 {
     let entry: Option<*mut dyn FnOnce()> = Some(Box::into_raw(Box::new(f)));
-    Arc::new(spawn_task(tid, entry))
+    Arc::new(spawn_task(tid, flags, entry))
 }
 
-pub fn spawn_task(tid: Tid, entry: Option<*mut dyn FnOnce()>) -> SchedInfo {
+pub fn spawn_task(tid: Tid, flags: usize, entry: Option<*mut dyn FnOnce()>) -> SchedInfo {
     let mut sched_info = SchedInfo::new();
     sched_info.init_tid(tid);
+    sched_info.flags = flags;
     sched_info.entry = entry;
     let sp = sched_info.pt_regs_addr();
     sched_info.thread.get_mut().init(task_entry as usize, sp.into(), 0.into());
@@ -88,6 +89,11 @@ pub extern "C" fn task_entry() -> ! {
 
     if let Some(entry) = ctx.entry {
         unsafe { Box::from_raw(entry)() };
+    }
+
+    if (ctx.flags & PF_KTHREAD) != 0 {
+        ctx.set_state(TaskState::Dead);
+        yield_now();
     }
 
     let sp = taskctx::current_ctx().pt_regs_addr();
