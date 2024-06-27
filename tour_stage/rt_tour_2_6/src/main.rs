@@ -10,12 +10,12 @@ mod userboot;
 mod trap;
 
 use core::panic::PanicInfo;
-use core::sync::atomic::{AtomicBool, Ordering};
 use wait_queue::WaitQueue;
 use taskctx::PF_KTHREAD;
+use mutex::Mutex;
 
 static WQ: WaitQueue = WaitQueue::new();
-static APP_READY: AtomicBool = AtomicBool::new(false);
+static APP_READY: Mutex<bool> = Mutex::new(false);
 
 #[no_mangle]
 pub extern "Rust" fn runtime_main(cpu_id: usize, dtb_pa: usize) {
@@ -39,7 +39,7 @@ pub extern "Rust" fn runtime_main(cpu_id: usize, dtb_pa: usize) {
 
         // Note: wait wander-thread to notify.
         info!("App kernel-thread waits for wanderer to notify ..");
-        APP_READY.store(true, Ordering::Relaxed);
+        *APP_READY.lock() = true;
         WQ.wait();
 
         // Start userland app.
@@ -52,7 +52,7 @@ pub extern "Rust" fn runtime_main(cpu_id: usize, dtb_pa: usize) {
     let ctx = run_queue::spawn_task_raw(2, PF_KTHREAD, || {
         info!("Wander kernel-thread is running ..");
         info!("Wander kernel-thread waits for app to be ready ..");
-        while !APP_READY.load(Ordering::Relaxed) {
+        while !(*APP_READY.lock()) {
             run_queue::yield_now();
         }
         info!("Wander notifies app ..");
