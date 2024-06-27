@@ -13,6 +13,7 @@ use axerrno::{LinuxError, LinuxResult};
 use task::{current, Tid, TaskRef, TaskStruct};
 use spinbase::SpinNoIrq;
 use task::SIGCHLD;
+use taskctx::PF_KTHREAD;
 
 bitflags::bitflags! {
     /// clone flags
@@ -50,6 +51,7 @@ bitflags::bitflags! {
 
 struct KernelCloneArgs {
     flags: CloneFlags,
+    pflags: usize,
     _name: String,
     exit_signal: i32,
     tls: usize,
@@ -62,6 +64,7 @@ struct KernelCloneArgs {
 impl KernelCloneArgs {
     fn new(
         flags: CloneFlags,
+        pflags: usize,
         name: &str,
         exit_signal: i32,
         tls: usize,
@@ -72,6 +75,7 @@ impl KernelCloneArgs {
     ) -> Self {
         Self {
             flags,
+            pflags,
             _name: String::from(name),
             exit_signal,
             tls,
@@ -230,7 +234,7 @@ impl KernelCloneArgs {
 
         warn!("Todo: handle exit_signal {}", exit_signal);
 
-        let mut sched_info = run_queue::spawn_task(tid, self.entry);
+        let mut sched_info = run_queue::spawn_task(tid, self.pflags, self.entry);
         sched_info.init_tgid(tgid);
         sched_info.real_parent = real_parent;
         sched_info.group_leader = group_leader;
@@ -287,6 +291,32 @@ where
     let f = Box::into_raw(Box::new(f));
     let args = KernelCloneArgs::new(
         flags | CloneFlags::CLONE_VM | CloneFlags::CLONE_UNTRACED,
+        0,
+        "",
+        0,
+        0,
+        0,
+        0,
+        None,
+        Some(f),
+    );
+    args.perform().expect("kernel_clone failed.")
+}
+
+/// Create a kernel thread.
+///
+/// Invoke `f` to do some preparations before entering userland.
+pub fn kernel_thread<F>(f: F, flags: CloneFlags) -> Tid
+where
+    F: FnOnce() + 'static,
+{
+    info!("create a user mode thread ...");
+    assert_eq!(flags.intersection(CloneFlags::CSIGNAL).bits(), 0);
+    //assert!((flags.bits() & CloneFlags::CSIGNAL.bits()) == 0);
+    let f = Box::into_raw(Box::new(f));
+    let args = KernelCloneArgs::new(
+        flags | CloneFlags::CLONE_VM | CloneFlags::CLONE_UNTRACED,
+        PF_KTHREAD,
         "",
         0,
         0,
@@ -315,7 +345,7 @@ pub fn sys_clone(
     } else {
         Some(stack)
     };
-    let args = KernelCloneArgs::new(flags, "", exit_signal, tls, ptid, ctid, stack, None);
+    let args = KernelCloneArgs::new(flags, 0, "", exit_signal, tls, ptid, ctid, stack, None);
     warn!("impl clone: flags {:#X} sig {:#X} stack {:#X} ptid {:#X} tls {:#X} ctid {:#X}",
         flags.bits(), exit_signal, stack.unwrap_or(0), ptid, tls, ctid);
     args.perform().unwrap_or(usize::MAX)
