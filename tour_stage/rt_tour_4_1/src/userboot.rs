@@ -15,11 +15,13 @@ use axhal::arch::write_page_table_root0;
 pub const USER_APP_ENTRY: usize = 0x1000;
 
 pub fn load() {
-    let result = pflash::load_next(None);
-    assert!(result.is_some());
-    let (va, size) = result.unwrap();
-    info!("Got pflash payload: pos {:#x} size {}", va, size);
-    let load_code = unsafe { core::slice::from_raw_parts(va as *const _, size) };
+    let fs = fstree::init_fs();
+    let locked_fs = fs.lock();
+
+    let fname = "/sbin/origin.bin";
+    let load_code = axfile::api::read(fname, &locked_fs).unwrap();
+    let size = load_code.len();
+    info!("read origin.bin: size [{}]", size);
 
     let ctx = taskctx::current_ctx();
     let pgd = ctx.try_pgd().expect("Current task has no pgd!");
@@ -29,7 +31,7 @@ pub fn load() {
     info!("Map user page: {:#x} ok!", USER_APP_ENTRY);
 
     let run_code = unsafe { core::slice::from_raw_parts_mut(USER_APP_ENTRY as *mut u8, size) };
-    run_code.copy_from_slice(load_code);
+    run_code.copy_from_slice(&load_code);
 
     info!("App code: {:?}", &run_code[0..size]);
 }
@@ -51,7 +53,7 @@ pub fn cleanup() {
 }
 
 pub fn init(cpu_id: usize, dtb_pa: usize) {
-    pflash::init(cpu_id, dtb_pa);
+    fstree::init(cpu_id, dtb_pa);
 
     // Alloc new pgd and setup.
     let pgd = Arc::new(SpinNoIrq::new(pgd_alloc()));

@@ -17,6 +17,8 @@ run_queue = { git = "ssh://git@github.com/shilei-massclouds/run_queue" }
 wait_queue = { git = "ssh://git@github.com/shilei-massclouds/wait_queue" }
 preempt_guard = { git = "ssh://git@github.com/shilei-massclouds/preempt_guard" }
 mutex = { git = "ssh://git@github.com/shilei-massclouds/mutex" }
+fstree = { git = "ssh://git@github.com/shilei-massclouds/fstree" }
+axfile = { git = "ssh://git@github.com/shilei-massclouds/axfile" }
 
 [target.'cfg(any(target_arch = "riscv32", target_arch = "riscv64"))'.dependencies]
 riscv = "0.10"
