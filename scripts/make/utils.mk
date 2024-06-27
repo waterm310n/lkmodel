@@ -39,6 +39,7 @@ define build_linux_image
 endef
 
 define riscv64_install_apps
+  $(call build_origin)
   @mkdir -p ./mnt
   @sudo mount $(1) ./mnt
   @sudo mkdir -p ./mnt/lib
@@ -50,6 +51,7 @@ define riscv64_install_apps
   @sudo cp /usr/riscv64-linux-gnu/lib/libresolv.so.2 ./mnt/lib/
   @sudo cp -r ./btp/build/riscv64/sbin ./mnt/
   @sudo cp ./btp/syscalls ./mnt/opt/
+  @sudo cp /tmp/origin.bin ./mnt/sbin
   -@sudo cp -f $(LTP)/build_riscv64/testcases/bin/mmap[[:digit:]]* ./mnt/testcases/
   ls -l ./mnt/lib
   ls -l ./mnt/sbin
@@ -86,4 +88,9 @@ define mk_pflash
   @dd if=/dev/zero of=./$(1) bs=1M count=32
   @dd if=/tmp/head.bin of=./$(1) conv=notrunc
   @dd if=/tmp/origin.bin of=./$(1) seek=16 obs=1 conv=notrunc
+endef
+
+define build_origin
+  @RUSTFLAGS="" cargo build -p origin  --target riscv64gc-unknown-none-elf --release
+  @rust-objcopy --binary-architecture=riscv64 --strip-all -O binary ./target/riscv64gc-unknown-none-elf/release/origin /tmp/origin.bin
 endef
