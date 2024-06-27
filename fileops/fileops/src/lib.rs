@@ -433,7 +433,7 @@ pub fn ftruncate(fd: usize, length: usize) -> usize {
 }
 
 pub fn do_open(filename: &str, _flags: usize) -> LinuxResult<FileRef> {
-    error!("do_open path {}", filename);
+    info!("do_open path {}", filename);
 
     let mut opts = OpenOptions::new();
     opts.read(true);
