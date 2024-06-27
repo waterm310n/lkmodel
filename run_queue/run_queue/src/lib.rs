@@ -71,10 +71,14 @@ pub fn on_timer_tick() {
 // Now schedule_tail: 'run_queue::force_unlock();` hinders us.
 // Consider to move it to sched first!
 pub extern "C" fn task_entry() -> ! {
-    info!("################ task_entry ...");
+    debug!("################ task_entry ...");
     // schedule_tail
     // unlock runqueue for freshly created task
     force_unlock();
+
+    // Todo: add irq-flags for current taskctx.
+    // If IRQ is enabled, call enable_irqs.
+    axhal::arch::enable_irqs();
 
     let ctx = taskctx::current_ctx();
     if ctx.set_child_tid != 0 {
