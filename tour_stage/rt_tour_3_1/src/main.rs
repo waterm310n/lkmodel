@@ -37,11 +37,15 @@ pub extern "Rust" fn runtime_main(_cpu_id: usize, _dtb_pa: usize) {
     buf[2] = b'2';
     buf[3] = b'3';
 
+    info!("ramdisk: write data ..");
     assert!(disk.write_block(block_id, &buf).is_ok());
     assert!(disk.flush().is_ok());
+    info!("ramdisk: write ok!");
 
+    info!("ramdisk: read data ..");
     assert!(disk.read_block(block_id, &mut buf).is_ok());
     assert!(buf[0..4] == *b"0123");
+    info!("ramdisk: verify ok!");
 
     info!("[rt_tour_3_1]: ok!");
     axhal::misc::terminate();
