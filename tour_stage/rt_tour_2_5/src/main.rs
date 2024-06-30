@@ -12,6 +12,7 @@ mod trap;
 use core::panic::PanicInfo;
 use core::sync::atomic::{AtomicBool, Ordering};
 use wait_queue::WaitQueue;
+use taskctx::PF_KTHREAD;
 
 static WQ: WaitQueue = WaitQueue::new();
 static APP_READY: AtomicBool = AtomicBool::new(false);
@@ -28,7 +29,7 @@ pub extern "Rust" fn runtime_main(cpu_id: usize, dtb_pa: usize) {
     run_queue::init(cpu_id, dtb_pa);
     trap::start();
 
-    let ctx = run_queue::spawn_task_raw(1, move || {
+    let ctx = run_queue::spawn_task_raw(1, 0, move || {
         // Prepare for user app to startup.
         userboot::init(cpu_id, dtb_pa);
 
@@ -48,7 +49,7 @@ pub extern "Rust" fn runtime_main(cpu_id: usize, dtb_pa: usize) {
     });
     run_queue::activate_task(ctx.clone());
 
-    let ctx = run_queue::spawn_task_raw(2, || {
+    let ctx = run_queue::spawn_task_raw(2, PF_KTHREAD, || {
         info!("Wander kernel-thread is running ..");
         info!("Wander kernel-thread waits for app to be ready ..");
         while !APP_READY.load(Ordering::Relaxed) {

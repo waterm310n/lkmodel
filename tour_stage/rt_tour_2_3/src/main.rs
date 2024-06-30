@@ -10,7 +10,7 @@ mod userboot;
 mod trap;
 
 use core::panic::PanicInfo;
-use taskctx::TaskState;
+use taskctx::{TaskState, PF_KTHREAD};
 
 #[no_mangle]
 pub extern "Rust" fn runtime_main(cpu_id: usize, dtb_pa: usize) {
@@ -23,12 +23,13 @@ pub extern "Rust" fn runtime_main(cpu_id: usize, dtb_pa: usize) {
     // Startup a kernel thread.
     run_queue::init(cpu_id, dtb_pa);
 
-    let ctx = run_queue::spawn_task_raw(1, move || {
+    let ctx = run_queue::spawn_task_raw(1, 0, move || {
         // Prepare for user app to startup.
         userboot::init(cpu_id, dtb_pa);
         info!("App kernel-thread is running ..");
         // Load userland app into pgd.
         userboot::load();
+        run_queue::yield_now();
         // Start userland app.
         userboot::start();
         userboot::cleanup();
@@ -37,7 +38,7 @@ pub extern "Rust" fn runtime_main(cpu_id: usize, dtb_pa: usize) {
     });
     run_queue::activate_task(ctx.clone());
 
-    let ctx = run_queue::spawn_task_raw(2, || {
+    let ctx = run_queue::spawn_task_raw(2, PF_KTHREAD, || {
         info!("Wander kernel-thread is running ..");
         let ctx = taskctx::current_ctx();
         ctx.set_state(TaskState::Dead);

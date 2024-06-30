@@ -11,6 +11,7 @@ mod trap;
 
 use core::panic::PanicInfo;
 use taskctx::TaskState;
+use taskctx::PF_KTHREAD;
 
 #[no_mangle]
 pub extern "Rust" fn runtime_main(cpu_id: usize, dtb_pa: usize) {
@@ -26,7 +27,7 @@ pub extern "Rust" fn runtime_main(cpu_id: usize, dtb_pa: usize) {
     // Startup a kernel thread.
     run_queue::init(cpu_id, dtb_pa);
 
-    let ctx = run_queue::spawn_task_raw(2, || {
+    let ctx = run_queue::spawn_task_raw(2, PF_KTHREAD, || {
         info!("Wander kernel-thread is running ..");
         let ctx = taskctx::current_ctx();
         ctx.set_state(TaskState::Dead);

@@ -11,6 +11,7 @@ mod trap;
 
 use core::panic::PanicInfo;
 use trap::{PERIODIC_INTERVAL_NANOS, get_ticks};
+use taskctx::PF_KTHREAD;
 
 #[no_mangle]
 pub extern "Rust" fn runtime_main(cpu_id: usize, dtb_pa: usize) {
@@ -24,7 +25,7 @@ pub extern "Rust" fn runtime_main(cpu_id: usize, dtb_pa: usize) {
     run_queue::init(cpu_id, dtb_pa);
     trap::start();
 
-    let ctx = run_queue::spawn_task_raw(1, move || {
+    let ctx = run_queue::spawn_task_raw(1, 0, move || {
         // Prepare for user app to startup.
         userboot::init(cpu_id, dtb_pa);
 
@@ -43,7 +44,7 @@ pub extern "Rust" fn runtime_main(cpu_id: usize, dtb_pa: usize) {
     });
     run_queue::activate_task(ctx.clone());
 
-    let ctx = run_queue::spawn_task_raw(2, || {
+    let ctx = run_queue::spawn_task_raw(2, PF_KTHREAD, || {
         info!("Wander kernel-thread is running ..");
         info!("Wander kernel-thread enters infinite waiting period ..");
         loop {
