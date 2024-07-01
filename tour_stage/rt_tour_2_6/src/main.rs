@@ -62,7 +62,9 @@ pub extern "Rust" fn runtime_main(cpu_id: usize, dtb_pa: usize) {
 
     run_queue::yield_now();
 
-    unreachable!();
+    info!("All threads have exited. System is exiting ..");
+    info!("[rt_tour_2_6]: ok!");
+    axhal::misc::terminate();
 }
 
 #[panic_handler]

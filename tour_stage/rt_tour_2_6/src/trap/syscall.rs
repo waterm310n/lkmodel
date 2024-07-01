@@ -26,9 +26,11 @@ fn do_syscall(sysno: usize, arg0: usize) -> usize {
             0
         },
         SYS_EXIT => {
-            info!("Syscall(Exit): system is exiting ...");
-            info!("[rt_tour_2_6]: ok!");
-            axhal::misc::terminate();
+            info!("Syscall(Exit): ...");
+            let curr = taskctx::current_ctx();
+            curr.set_state(taskctx::TaskState::Dead);
+            run_queue::yield_now();
+            unreachable!();
         },
         _ => {
             panic!("Bad sysno: {}", sysno);
