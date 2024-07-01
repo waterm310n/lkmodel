@@ -33,7 +33,7 @@ pub fn load() {
     let run_code = unsafe { core::slice::from_raw_parts_mut(USER_APP_ENTRY as *mut u8, size) };
     run_code.copy_from_slice(&load_code);
 
-    info!("App code: {:?}", &run_code[0..size]);
+    info!("App code: [{:#x}]: {:?}", USER_APP_ENTRY, &run_code[0..size]);
 }
 
 pub fn start() {

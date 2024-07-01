@@ -13,13 +13,13 @@ use core::panic::PanicInfo;
 use alloc::sync::Arc;
 use wait_queue::WaitQueue;
 use taskctx::PF_KTHREAD;
-use mutex::Mutex;
 use spinbase::SpinNoIrq;
 use page_table::paging::pgd_alloc;
 use page_table::MappingFlags;
 use axhal::arch::write_page_table_root0;
 use userboot::USER_APP_ENTRY;
 use axhal::mem::PAGE_SIZE_4K;
+use mutex::Mutex;
 
 static WQ: WaitQueue = WaitQueue::new();
 static APP_READY: Mutex<bool> = Mutex::new(false);
@@ -36,7 +36,7 @@ pub extern "Rust" fn runtime_main(cpu_id: usize, dtb_pa: usize) {
     run_queue::init(cpu_id, dtb_pa);
     trap::start();
 
-    let ctx = run_queue::spawn_task_raw(1, 0, move || {
+    let app = run_queue::spawn_task_raw(1, 0, move || {
         // Prepare for user app to startup.
         userboot::init(cpu_id, dtb_pa);
 
@@ -54,9 +54,13 @@ pub extern "Rust" fn runtime_main(cpu_id: usize, dtb_pa: usize) {
         userboot::start();
         userboot::cleanup();
     });
-    run_queue::activate_task(ctx.clone());
+    run_queue::activate_task(app.clone());
 
-    let ctx = run_queue::spawn_task_raw(2, PF_KTHREAD, || {
+    let ctx = run_queue::spawn_task_raw(2, PF_KTHREAD, move || {
+        while !(*APP_READY.lock()) {
+            run_queue::yield_now();
+        }
+
         info!("Wander kernel-thread is running ..");
 
         // Alloc new pgd and setup.
@@ -73,23 +77,23 @@ pub extern "Rust" fn runtime_main(cpu_id: usize, dtb_pa: usize) {
         pgd.lock().map_region_and_fill(USER_APP_ENTRY.into(), PAGE_SIZE_4K, flags).unwrap();
         info!("Wanderer: Map user page: {:#x} ok!", USER_APP_ENTRY);
 
-        // Try to access user app code area
+        // Try to destroy user app code area
         let size = 16;
         let run_code = unsafe { core::slice::from_raw_parts_mut(USER_APP_ENTRY as *mut u8, size) };
-        info!("Try to access app code: {:?}", &run_code[0..size]);
+        run_code.fill(b'A');
+        info!("Try to destroy app code: [{:#x}]: {:?}", USER_APP_ENTRY, &run_code[0..size]);
 
-        info!("Wander kernel-thread waits for app to be ready ..");
-        while !(*APP_READY.lock()) {
-            run_queue::yield_now();
-        }
         info!("Wander notifies app ..");
         WQ.notify_one(true);
     });
     run_queue::activate_task(ctx.clone());
 
-    run_queue::yield_now();
+    while !app.is_dead() {
+        run_queue::yield_now();
+    }
 
-    unreachable!();
+    info!("[rt_tour_4_1]: ok!");
+    axhal::misc::terminate();
 }
 
 #[panic_handler]

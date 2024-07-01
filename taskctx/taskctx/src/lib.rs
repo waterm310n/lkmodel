@@ -182,6 +182,11 @@ impl SchedInfo {
     }
 
     #[inline]
+    pub fn is_dead(&self) -> bool {
+        matches!(self.state(), TaskState::Dead)
+    }
+
+    #[inline]
     pub fn set_in_wait_queue(&self, in_wait_queue: bool) {
         self.in_wait_queue.store(in_wait_queue, Ordering::Release);
     }
