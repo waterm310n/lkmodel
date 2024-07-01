@@ -32,3 +32,7 @@ page_table = { git = "ssh://git@github.com/shilei-massclouds/page_table" }
 
 [target.'cfg(target_arch = "x86_64")'.dependencies]
 raw-cpuid = "11.0"
+
+[target.'cfg(any(target_arch = "riscv32", target_arch = "riscv64"))'.dependencies]
+riscv = "0.10"
+sbi-rt = { version = "0.0.2", features = ["legacy"] }

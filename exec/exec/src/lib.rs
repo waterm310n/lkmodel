@@ -20,7 +20,7 @@ pub fn kernel_execve(filename: &str, argv: Vec<String>, envp: Vec<String>) -> Li
 
     let (entry, sp) = bprm_loader::execve(filename, 0, argv, envp)?;
 
-    info!("start thread...");
+    info!("start thread entry [{:#x}] ...", entry);
     start_thread(task::current().pt_regs_addr(), entry, sp);
     Ok(())
 }

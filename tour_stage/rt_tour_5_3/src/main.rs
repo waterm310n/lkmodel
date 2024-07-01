@@ -2,10 +2,13 @@
 
 #![no_std]
 #![no_main]
+#![feature(asm_const)]
 
 #[macro_use]
 extern crate axlog2;
 extern crate alloc;
+
+mod trap;
 
 use alloc::vec;
 use alloc::vec::Vec;
@@ -25,7 +28,9 @@ pub extern "Rust" fn runtime_main(cpu_id: usize, dtb: usize) {
 pub fn init(cpu_id: usize, dtb: usize) {
     axlog2::init("info");
     exec::init(cpu_id, dtb);
-    axtrap::init(cpu_id, dtb);
+
+    // Setup simplest trap framework.
+    trap::init();
 }
 
 pub fn start(_cpu_id: usize, _dtb: usize) {

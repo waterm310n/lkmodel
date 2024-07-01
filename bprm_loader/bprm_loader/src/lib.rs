@@ -316,8 +316,12 @@ fn padzero(elf_bss: usize) {
     info!("padzero nbyte: {:#X} ...", elf_bss);
     if nbyte != 0 {
         let nbyte = PAGE_SIZE - nbyte;
-        unsafe { core::slice::from_raw_parts_mut(elf_bss as *mut u8, nbyte) }.fill(0);
         info!("padzero nbyte: {:#X} {:#X}", elf_bss, nbyte);
+        // Todo: Check whether this page has been mapped before faultin?
+        let p = align_down_4k(elf_bss);
+        let _ = mmap::faultin_page(p, 0);
+
+        unsafe { core::slice::from_raw_parts_mut(elf_bss as *mut u8, nbyte) }.fill(0);
     }
 }
 
