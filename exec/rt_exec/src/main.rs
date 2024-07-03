@@ -8,6 +8,8 @@ extern crate axlog2;
 extern crate alloc;
 
 use core::panic::PanicInfo;
+use alloc::vec;
+use alloc::borrow::ToOwned;
 
 /// The main entry point for monolithic kernel startup.
 #[cfg_attr(not(test), no_mangle)]
@@ -25,7 +27,7 @@ pub fn init(cpu_id: usize, dtb: usize) {
 
 pub fn start(_cpu_id: usize, _dtb: usize) {
     let filename = "/sbin/init";
-    let _ = exec::kernel_execve(filename);
+    let _ = exec::kernel_execve(filename, vec![filename.to_owned()], vec![]);
 
     let sp = task::current().pt_regs_addr();
     axhal::arch::ret_from_fork(sp);

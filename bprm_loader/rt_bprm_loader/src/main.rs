@@ -28,9 +28,9 @@ pub fn init(cpu_id: usize, dtb: usize) {
 pub fn start(_cpu_id: usize, _dtb: usize) {
     let filename = "/sbin/init";
     let args = vec![filename.into()];
-    let (entry, sp) = bprm_loader::execve(filename, 0, args).unwrap();
+    let (entry, sp) = bprm_loader::execve(filename, 0, args, vec![]).unwrap();
 
-    // Todo: check entry and sp for ld.so 
+    // Todo: check entry and sp for ld.so
     panic!("Reach here! entry: {:#X}; sp: {:#X}", entry, sp);
 }
 

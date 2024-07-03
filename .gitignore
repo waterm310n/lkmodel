@@ -26,3 +26,6 @@ disk.img
 proj/src/main.rs
 proj/Cargo.toml
 tags
+
+tour_stage
+*.img
