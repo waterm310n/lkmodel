@@ -22,6 +22,8 @@ unsafe extern "C" fn _start() -> ! {
         li      t0, {boot_stack_size}
         add     sp, sp, t0              // setup boot stack
 
+        call    {clear_bss}             // clear bss
+
         call    {init_boot_page_table}
         call    {init_mmu}              // setup boot page table and enabel MMU
 
@@ -37,11 +39,16 @@ unsafe extern "C" fn _start() -> ! {
         phys_virt_offset = const PHYS_VIRT_OFFSET,
         boot_stack_size = const TASK_STACK_SIZE,
         boot_stack = sym BOOT_STACK,
+        clear_bss = sym clear_bss,
         init_boot_page_table = sym init_boot_page_table,
         init_mmu = sym init_mmu,
         entry = sym super::rust_entry,
         options(noreturn),
     )
+}
+
+unsafe fn clear_bss() {
+    crate::platform::clear_bss();
 }
 
 unsafe fn init_boot_page_table() {

@@ -6,3 +6,4 @@ edition = "2021"
 [dependencies]
 arch_boot = { git = "ssh://git@github.com/shilei-massclouds/arch_boot.git" }
 axhal = { git = "ssh://git@github.com/shilei-massclouds/axhal" }
+sbi-rt = { version = "0.0.2", features = ["legacy"] }
