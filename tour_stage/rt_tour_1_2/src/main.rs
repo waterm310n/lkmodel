@@ -20,9 +20,12 @@ pub extern "Rust" fn runtime_main(_cpu_id: usize, _dtb_pa: usize) {
 
     let s = String::from("Hello, axalloc!");
     info!("Alloc string: {}", s);
-
+    info!("Before alloc page: Current Avaliable Bytes {}",global_allocator().available_bytes());
+    info!("Before alloc page: Current Avaliable Bytes {}",global_allocator().available_pages());
     let va = global_allocator().alloc_pages(1, PAGE_SIZE_4K).unwrap();
     info!("Alloc page: {:#x}", va);
+    info!("after alloc page: Current Avaliable Bytes {}",global_allocator().available_bytes());
+    info!("after alloc page: Current Avaliable Bytes {}",global_allocator().available_pages());
 
     let dwords = unsafe {
         slice::from_raw_parts_mut(va as *mut u64, PAGE_SIZE_4K/8)
