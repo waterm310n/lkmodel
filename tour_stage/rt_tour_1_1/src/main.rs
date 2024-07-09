@@ -8,7 +8,7 @@ use core::panic::PanicInfo;
 
 #[no_mangle]
 pub extern "Rust" fn runtime_main(_cpu_id: usize, _dtb_pa: usize) {
-    let msg = "\n[rt_tour_1_1]: earlycon!\n\n";
+    let msg = "\u{1B}[31m\n[rt_tour_1_1]: earlycon!\n\n\u{1B}[m";
     early_console::write_bytes(msg.as_bytes());
 
     axlog2::init("debug");
