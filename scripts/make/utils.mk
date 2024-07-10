@@ -85,9 +85,15 @@ define mk_pflash
   @printf "pfld\00\00\00\01" > /tmp/prefix.bin
   @printf "%08x" `stat -c "%s" /tmp/origin.bin` | xxd -r -ps > /tmp/size.bin
   @cat /tmp/prefix.bin /tmp/size.bin > /tmp/head.bin
+  @echo "drv=pflash" > /tmp/second_payload.bin
+  @printf "%08x" `stat -c "%s" /tmp/second_payload.bin` | xxd -r -ps > /tmp/second_size.bin
+  @printf "\00\00\00\01" > /tmp/second_pad.bin
+  @cat /tmp/prefix.bin /tmp/second_size.bin /tmp/second_pad.bin > /tmp/second_head.bin
   @dd if=/dev/zero of=./$(1) bs=1M count=32
   @dd if=/tmp/head.bin of=./$(1) conv=notrunc
   @dd if=/tmp/origin.bin of=./$(1) seek=16 obs=1 conv=notrunc
+  @dd if=/tmp/second_head.bin of=./$(1) seek=64 obs=1 conv=notrunc
+  @dd if=/tmp/second_payload.bin of=./$(1) seek=80 obs=1 conv=notrunc
 endef
 
 define build_origin

@@ -7,11 +7,11 @@ const PFLASH_START: usize = 0x2200_0000;
 const MAGIC: u32 = 0x64_6C_66_70;
 const VERSION: u32 = 0x01;
 
-struct PayloadHead {
+pub struct PayloadHead {
     _magic: u32,
     _version: u32,
     _size: u32,
-    _pad: u32,
+    _pad: u32, // 如果_pad的值为1，则表示参数，否则表示应用
 }
 
 /// Load next payload from offset in pflash.
