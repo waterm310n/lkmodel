@@ -4,23 +4,22 @@ LK model components.
 ### Fork&&Clone lkmodel，并切换分支
 
 Fork lkmodel到自己的github账号，Clone到本地。
-首先编译工具lktool。
-
 ```sh
-git checkout tutorial
-cd tools/lktool
-cargo build
-cd ../..
+git checkout os_tour
 ```
 
-把lktool加入到环境变量，并采取短名称lk
+### 安装工具lktool
 
 ```sh
-export PATH=$PATH:/home/cloud/gitWork/lkmodel/tools/lktool/target/debug
+cargo install --git git+ssh://git@github.com/shilei-massclouds/lkmodel.git --branch os_tour lktool
+```
+> 注：上面的URL可以替换成自己fork后的仓库地址
+
+设置短名称lk, 后面可以用全名lktool或短名lk
+
+```sh
 alias lk='lktool'
 ```
-
-> 注意：需要把/home/cloud/gitWork/lktool替换为实际路径
 
 ### 查看可以作为根的组件
 
