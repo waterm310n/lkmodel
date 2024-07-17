@@ -7,7 +7,6 @@ extern crate alloc;
 
 use core::ptr::null;
 use core::str::from_utf8;
-use alloc::vec;
 use alloc::vec::Vec;
 use alloc::string::String;
 
@@ -68,7 +67,7 @@ fn total_mapping_size(phdrs: &Vec<ProgramHeader>) -> usize {
 
 fn load_elf_interp(
     file: FileRef,
-    app_entry: usize,
+    _app_entry: usize,
 ) -> LinuxResult<(usize, usize)> {
     let no_base: usize = 1;
     let mut load_addr = 0;
@@ -183,7 +182,7 @@ fn elf_map(
 }
 
 fn load_elf_binary(
-    file: FileRef, mut argv: Vec<String>, envp: Vec<String>
+    file: FileRef, argv: Vec<String>, envp: Vec<String>
 ) -> LinuxResult<(usize, usize)> {
     let mut interp_file = None;
     let mut load_addr_set = false;
@@ -311,7 +310,7 @@ fn load_elf_binary(
 
 fn arch_setup_additional_pages() {
     // Todo: implement it. setup vdso pages.
-    mmap::_mmap(0, 0x2000, PROT_READ | PROT_EXEC, MAP_ANONYMOUS, None, 0);
+    let _ = mmap::_mmap(0, 0x2000, PROT_READ | PROT_EXEC, MAP_ANONYMOUS, None, 0);
 }
 
 fn create_elf_tables(e_phnum: usize, interp_load_addr: usize, e_entry: usize, phdr_addr: usize) {
@@ -401,7 +400,9 @@ const AT_VECTOR_SIZE: usize = 2*(AT_VECTOR_SIZE_ARCH + AT_VECTOR_SIZE_BASE + 1);
 /// Symbolic values for the entries in the auxiliary table
 /// put on the initial stack
 const AT_NULL   : usize = 0;    /* end of vector */
+#[allow(unused)]
 const AT_IGNORE : usize = 1;    /* entry should be ignored */
+#[allow(unused)]
 const AT_EXECFD : usize = 2;    /* file descriptor of program */
 const AT_PHDR   : usize = 3;    /* program headers for program */
 const AT_PHENT  : usize = 4;    /* size of program header entry */
@@ -410,18 +411,27 @@ const AT_PAGESZ : usize = 6;    /* system page size */
 const AT_BASE   : usize = 7;    /* base address of interpreter */
 const AT_FLAGS  : usize = 8;    /* flags */
 const AT_ENTRY  : usize = 9;    /* entry point of program */
+#[allow(unused)]
 const AT_NOTELF : usize = 10;   /* program is not ELF */
+#[allow(unused)]
 const AT_UID    : usize = 11;   /* real uid */
+#[allow(unused)]
 const AT_EUID   : usize = 12;   /* effective uid */
+#[allow(unused)]
 const AT_GID    : usize = 13;   /* real gid */
+#[allow(unused)]
 const AT_EGID   : usize = 14;   /* effective gid */
+#[allow(unused)]
 const AT_PLATFORM: usize = 15; /* string identifying CPU for optimizations */
 const AT_HWCAP  : usize = 16;   /* arch dependent hints at CPU capabilities */
 const AT_CLKTCK : usize = 17;   /* frequency at which times() increments */
 /* AT_* values 18 through 22 are reserved */
+#[allow(unused)]
 const AT_SECURE : usize = 23;   /* secure mode boolean */
+#[allow(unused)]
 const AT_BASE_PLATFORM: usize = 24;       /* string identifying real platform, may differ from AT_PLATFORM. */
 const AT_RANDOM : usize = 25;   /* address of 16 random bytes */
+#[allow(unused)]
 const AT_HWCAP2 : usize = 26;   /* extension of AT_HWCAP */
 const AT_EXECFN : usize = 31;   /* filename of program */
 
@@ -530,7 +540,7 @@ fn get_arg_page(
     pos = put_user(0, pos);
 
     /* Put the elf_info on the stack in the right place.  */
-    pos = copy_to_user(pos, &saved_auxv);
+    let _ = copy_to_user(pos, &saved_auxv);
 
     show_mem(sp);
     assert!(is_aligned(sp, 16));
@@ -540,7 +550,7 @@ fn get_arg_page(
 
 fn show_mem(mut pos: usize) {
     assert!(is_aligned(pos, 16));
-    for i in 0..4 {
+    for _ in 0..4 {
         let ptr = pos as *const usize;
         unsafe {
             error!("[{:x} {:x} {:x} {:x} {:x} {:x} {:x} {:x}]",

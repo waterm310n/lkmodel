@@ -311,7 +311,7 @@ fn linux_syscall_getrandom(args: SyscallArgs) -> usize {
         "impl linux_syscall_getrandom buf {:#X}, len {} flags {:#X}",
         buf, len, flags
     );
-    0
+    8
 }
 
 fn linux_syscall_clock_gettime(_args: SyscallArgs) -> usize {
