@@ -415,7 +415,7 @@ fn linux_syscall_uname(args: SyscallArgs) -> usize {
     init_bytes_from_str(&mut uname.release[..], "5.15.135+");
     init_bytes_from_str(
         &mut uname.version[..],
-        "#95 SMP Wed Jul 17 02:54:13 UTC 2024",
+        "#98 SMP Wed Jul 17 09:12:19 UTC 2024",
     );
     init_bytes_from_str(&mut uname.machine[..], "riscv64");
     init_bytes_from_str(&mut uname.domainname[..], "(none)");

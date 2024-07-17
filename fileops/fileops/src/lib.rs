@@ -300,7 +300,9 @@ pub fn fstatat(dfd: usize, path: usize, statbuf_ptr: usize, flags: usize) -> usi
     0
 }
 
-fn fstatat_stdio(_dfd: usize, _path: usize, statbuf: *mut KernelStat, _flags: usize) -> usize {
+fn fstatat_stdio(_dfd: usize, path: usize, statbuf: *mut KernelStat, _flags: usize) -> usize {
+    let path = get_user_str(path);
+    assert_eq!(path, "");
     // Todo: Handle stdin(0), stdout(1) and stderr(2)
     unsafe {
         *statbuf = KernelStat {

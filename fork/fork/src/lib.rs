@@ -332,7 +332,7 @@ pub fn set_tid_address(tidptr: usize) -> usize {
     info!("set_tid_address: tidptr {:#X}", tidptr);
     let mut ctx = taskctx::current_ctx();
     ctx.as_ctx_mut().clear_child_tid = tidptr;
-    0
+    ctx.tid()
 }
 
 pub fn init(cpu_id: usize, dtb_pa: usize) {
