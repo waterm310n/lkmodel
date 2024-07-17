@@ -234,6 +234,17 @@ pub struct KernelStat {
     pub st_ctime_nsec: isize,
 }
 
+pub fn faccessat(dfd: usize, path: &String) -> usize {
+    match openat(dfd, path, 0, 0) {
+        Ok(_) => {
+            return 0;
+        },
+        Err(e) => {
+            return linux_err_from!(e);
+        }
+    }
+}
+
 pub fn fstatat(dfd: usize, path: usize, statbuf_ptr: usize, flags: usize) -> usize {
     let statbuf = statbuf_ptr as *mut KernelStat;
 
@@ -296,9 +307,9 @@ fn fstatat_stdio(_dfd: usize, _path: usize, statbuf: *mut KernelStat, _flags: us
             st_mode: 0x2180,
             st_nlink: 1,
             st_blksize: 0x1000,
-            st_ino: 0x2a,
+            st_ino: 22,
             st_dev: 2,
-            st_rdev: 0x500001,
+            st_rdev: 0x501,
             st_size: 0,
             st_blocks: 0,
             //st_uid: 1000,

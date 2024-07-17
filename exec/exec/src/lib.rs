@@ -16,7 +16,7 @@ pub fn kernel_execve(filename: &str, argv: Vec<String>, envp: Vec<String>) -> Li
     info!("kernel_execve... {}", filename);
 
     task::alloc_mm();
-    let _ = setup_zero_page();
+    //let _ = setup_zero_page();
 
     let (entry, sp) = bprm_loader::execve(filename, 0, argv, envp)?;
 
@@ -25,12 +25,14 @@ pub fn kernel_execve(filename: &str, argv: Vec<String>, envp: Vec<String>) -> Li
     Ok(())
 }
 
+/*
 #[allow(unused)]
 fn setup_zero_page() -> LinuxResult {
     info!("setup_zero_page ...");
     mmap::_mmap(0x0, PAGE_SIZE, PROT_READ, MAP_FIXED | MAP_ANONYMOUS, None, 0)?;
     Ok(())
 }
+*/
 
 pub fn execve(path: &str, argv: usize, envp: usize) -> usize {
     info!("execve: {}", path);
@@ -50,7 +52,7 @@ pub fn execve(path: &str, argv: usize, envp: usize) -> usize {
     task::alloc_mm();
 
     // TODO: Move it into kernel_init().
-    let _ = setup_zero_page();
+    //let _ = setup_zero_page();
     let (entry, sp) = bprm_loader::execve(path, 0, args, vec![]).expect("exec error!");
 
     info!("start thread...");

@@ -127,10 +127,10 @@ fn load_elf_interp(
 
     //let entry = entry + load_addr;
     elf_bss += load_addr;
-    elf_brk += load_addr;
+    //elf_brk += load_addr;
 
-    info!("set brk...");
-    set_brk(elf_bss, elf_brk);
+    //info!("set brk...");
+    //set_brk(elf_bss, elf_brk);
 
     info!("pad bss...");
     padzero(elf_bss);
@@ -297,6 +297,9 @@ fn load_elf_binary(
         panic!("No interpret file!");
     };
 
+    // Todo: setup vdso pages for riscv64. vdso_len = 0x2000.
+    arch_setup_additional_pages();
+
     let interp_load_addr = elf_entry;
     elf_entry += interp_e_entry;
 
@@ -304,6 +307,11 @@ fn load_elf_binary(
 
     let sp = get_arg_page(e_phnum, interp_load_addr, entry, phdr_addr, elf_entry, argv, envp)?;
     Ok((elf_entry, sp))
+}
+
+fn arch_setup_additional_pages() {
+    // Todo: implement it. setup vdso pages.
+    mmap::_mmap(0, 0x2000, PROT_READ | PROT_EXEC, MAP_ANONYMOUS, None, 0);
 }
 
 fn create_elf_tables(e_phnum: usize, interp_load_addr: usize, e_entry: usize, phdr_addr: usize) {
@@ -325,7 +333,7 @@ fn set_brk(elf_bss: usize, elf_brk: usize) {
     let elf_bss = align_up_4k(elf_bss);
     let elf_brk = align_up_4k(elf_brk);
     if elf_bss < elf_brk {
-        info!("{:#X} < {:#X}", elf_bss, elf_brk);
+        warn!("{:#X} < {:#X}", elf_bss, elf_brk);
         mmap::_mmap(
             elf_bss,
             elf_brk - elf_bss,

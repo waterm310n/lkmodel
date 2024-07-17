@@ -85,13 +85,12 @@ pub fn do_syscall(args: SyscallArgs, sysno: usize) -> usize {
 
 fn linux_syscall_faccessat(args: SyscallArgs) -> usize {
     let [dfd, filename, mode, ..] = args;
-    info!(
+    error!(
         "linux_syscall_faccessat dfd {:#X} filename {:#X} mode {}",
         dfd, filename, mode
     );
     let filename = get_user_str(filename);
-    warn!("filename: {}", filename);
-    0
+    fileops::faccessat(dfd, &filename)
 }
 
 fn linux_syscall_sched_getaffinity(args: SyscallArgs) -> usize {
@@ -412,14 +411,14 @@ fn linux_syscall_uname(args: SyscallArgs) -> usize {
     let uname = unsafe { (ptr as *mut utsname).as_mut().unwrap() };
 
     init_bytes_from_str(&mut uname.sysname[..], "Linux");
-    init_bytes_from_str(&mut uname.nodename[..], "host");
-    init_bytes_from_str(&mut uname.domainname[..], "(none)");
-    init_bytes_from_str(&mut uname.release[..], "5.9.0-rc4+");
+    init_bytes_from_str(&mut uname.nodename[..], "(none)");
+    init_bytes_from_str(&mut uname.release[..], "5.15.135+");
     init_bytes_from_str(
         &mut uname.version[..],
-        "#1337 SMP Fri Mar 4 09:36:42 CST 2022",
+        "#95 SMP Wed Jul 17 02:54:13 UTC 2024",
     );
     init_bytes_from_str(&mut uname.machine[..], "riscv64");
+    init_bytes_from_str(&mut uname.domainname[..], "(none)");
 
     return 0;
 }
