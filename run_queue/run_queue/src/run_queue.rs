@@ -120,15 +120,13 @@ impl AxRunQueue {
         let curr = taskctx::current_ctx();
         assert!(curr.tid() != 0);
         info!("task block: {}", curr.tid());
-        /*
         assert!(curr.is_running());
-        assert!(!curr.is_idle());
+        //assert!(!curr.is_idle());
 
         // we must not block current task with preemption disabled.
-        assert!(curr.can_preempt(1));
+        //assert!(curr.can_preempt(1));
 
         curr.set_state(TaskState::Blocked);
-        */
         wait_queue_push(curr.clone());
         self.resched(false);
     }

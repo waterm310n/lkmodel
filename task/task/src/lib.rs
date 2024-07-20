@@ -184,6 +184,16 @@ impl TaskStruct {
             None => panic!("vfork_done hasn't been inited yet!"),
         }
     }
+
+    pub fn complete_vfork_done(&self) {
+        if let Some(done) = &self.vfork_done {
+            done.notify_one(true);
+        }
+    }
+
+    pub fn has_vfork_done(&self) -> bool {
+        self.vfork_done.is_some()
+    }
 }
 
 // Todo: It is unsafe extremely. We must remove it!!!

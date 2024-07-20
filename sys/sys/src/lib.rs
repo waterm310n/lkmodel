@@ -283,6 +283,13 @@ fn exit_mm() {
         // It's just a temp solution. Implement page refcount.
         return;
     }
+
+    if task.has_vfork_done() {
+        // Todo: this is a temporary solution.
+        // We need mm.drop to handle it automatically.
+        return;
+    }
+
     let mm = task.mm();
     let mut locked_mm = mm.lock();
     loop {
@@ -300,6 +307,7 @@ fn exit_notify(exit_code: u32) {
     task.exit_code.store(exit_code, Ordering::Relaxed);
     task.exit_state.store(EXIT_ZOMBIE, Ordering::Relaxed);
     // Todo: wakeup parent
+    task.complete_vfork_done();
 }
 
 fn do_task_dead() -> ! {

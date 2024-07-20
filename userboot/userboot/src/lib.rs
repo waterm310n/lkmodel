@@ -103,7 +103,9 @@ fn schedule_preempt_disabled() {
 }
 
 fn cpu_startup_entry() {
-    unimplemented!("do idle()");
+    loop {
+        task::yield_now();
+    }
 }
 
 /// Prepare for entering first user app.

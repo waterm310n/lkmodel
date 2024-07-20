@@ -493,6 +493,11 @@ fn get_arg_page(
     new_aux_ent(&mut saved_auxv, AT_BASE, interp_load_addr);
     new_aux_ent(&mut saved_auxv, AT_FLAGS, 0);
     new_aux_ent(&mut saved_auxv, AT_ENTRY, entry);
+    new_aux_ent(&mut saved_auxv, AT_UID, 0);
+    new_aux_ent(&mut saved_auxv, AT_EUID, 0);
+    new_aux_ent(&mut saved_auxv, AT_GID, 0);
+    new_aux_ent(&mut saved_auxv, AT_EGID, 0);
+    new_aux_ent(&mut saved_auxv, AT_SECURE, 0);
     new_aux_ent(&mut saved_auxv, AT_RANDOM, u_rand_bytes);
     new_aux_ent(&mut saved_auxv, AT_EXECFN, exec_fname);
     new_aux_ent(&mut saved_auxv, AT_NULL, 0);
