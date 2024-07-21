@@ -306,12 +306,12 @@ fn linux_syscall_wait4(args: SyscallArgs) -> usize {
 }
 
 fn linux_syscall_getrandom(args: SyscallArgs) -> usize {
-    let [buf, len, flags, ..] = args;
-    warn!(
-        "impl linux_syscall_getrandom buf {:#X}, len {} flags {:#X}",
-        buf, len, flags
-    );
-    8
+    let [buf, len, _flags, ..] = args;
+    assert_eq!(len, 8);
+    let r = axhal::misc::random() as u64;
+    let ubuf = unsafe { core::slice::from_raw_parts_mut(buf as *mut u8, len) };
+    ubuf.copy_from_slice(&r.to_le_bytes());
+    len
 }
 
 fn linux_syscall_clock_gettime(_args: SyscallArgs) -> usize {

@@ -42,6 +42,9 @@ pub mod mem;
 pub mod time;
 pub mod trap;
 
+/// Miscellaneous operation, e.g. terminate the system.
+pub mod misc;
+
 #[cfg(feature = "tls")]
 pub mod tls;
 
@@ -54,11 +57,6 @@ pub mod tls;
 // /// Console input and output.
 pub mod console {
     pub use early_console::*;
-}
-
-/// Miscellaneous operation, e.g. terminate the system.
-pub mod misc {
-    pub use super::platform::misc::*;
 }
 
 #[cfg(target_arch = "x86_64")]
