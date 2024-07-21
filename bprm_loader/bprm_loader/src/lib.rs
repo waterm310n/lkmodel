@@ -35,7 +35,7 @@ const ELF_HEAD_BUF_SIZE: usize = 256;
 pub fn execve(
     filename: &str, flags: usize, argv: Vec<String>, envp: Vec<String>
 ) -> LinuxResult<(usize, usize)> {
-    error!("bprm_execve: {}", filename);
+    debug!("bprm_execve: {}", filename);
     let file = do_open_execat(filename, flags)?;
     exec_binprm(file, argv, envp)
 }
@@ -93,7 +93,7 @@ fn load_elf_interp(
         if load_addr_set {
             elf_type |= MAP_FIXED;
         } else if no_base != 0 {
-            error!("no_base {:#x}", no_base);
+            debug!("no_base {:#x}", no_base);
             load_addr = va.wrapping_neg();
             assert_eq!(load_addr+va, 0);
         }
@@ -110,7 +110,7 @@ fn load_elf_interp(
 
         if !load_addr_set {
             load_addr = map_addr - align_down_4k(va);
-            error!("load_addr {:#x}", load_addr);
+            debug!("load_addr {:#x}", load_addr);
             load_addr_set = true;
         }
 
@@ -166,16 +166,16 @@ fn elf_map(
 
     if total_size > 0 {
         total_size = align_up_4k(total_size);
-        error!("elf_map1: addr {:#x}, total_size {:#x}, prot {:#x}, type {:#x}, off {:#x}\n",
+        debug!("elf_map1: addr {:#x}, total_size {:#x}, prot {:#x}, type {:#x}, off {:#x}\n",
                va, total_size, prot, flags, off);
         let map_addr = mmap::_mmap(va, total_size, prot, flags, file, off)?;
         if !bad_addr(map_addr) {
-            error!("elf_map: unmap\n");
+            debug!("elf_map: unmap\n");
             mmap::munmap(map_addr+size, total_size-size);
         }
         Ok(map_addr)
     } else {
-        error!("elf_map2: addr {:#x}, size {:#x}, prot {:#x}, type {:#x}, off {:#x}\n",
+        debug!("elf_map2: addr {:#x}, size {:#x}, prot {:#x}, type {:#x}, off {:#x}\n",
                va, size, prot, flags, off);
         mmap::_mmap(va, size, prot, flags, file, off)
     }
@@ -215,7 +215,7 @@ fn load_elf_binary(
         if phdr.p_type != PT_LOAD {
             continue;
         }
-        error!(
+        debug!(
             "phdr: offset: {:#X}=>{:#X} size: {:#X}=>{:#X}",
             phdr.p_offset, phdr.p_vaddr, phdr.p_filesz, phdr.p_memsz
         );
@@ -228,7 +228,7 @@ fn load_elf_binary(
         } else {
             assert!(interp_file.is_some());
             load_bias = align_down_4k(ELF_ET_DYN_BASE);
-            error!("load_bias: {:#x}", load_bias);
+            debug!("load_bias: {:#x}", load_bias);
             elf_type |= MAP_FIXED;
 
             /*
@@ -244,7 +244,7 @@ fn load_elf_binary(
             assert_ne!(total_size, 0);
         }
 
-        error!("=== binary elf_map load_bias: {:#x}, va: {:#x}, total: {:#x}\n",
+        debug!("=== binary elf_map load_bias: {:#x}, va: {:#x}, total: {:#x}\n",
                load_bias, va, total_size);
 
         let map_addr = elf_map(
@@ -267,7 +267,7 @@ fn load_elf_binary(
          */
         if phdr.p_offset as usize <= e_phoff && e_phoff < (phdr.p_offset + phdr.p_filesz) as usize {
             phdr_addr = e_phoff - phdr.p_offset as usize + phdr.p_vaddr as usize;
-            error!("===> phdr_addr {:#x}", phdr_addr);
+            debug!("===> phdr_addr {:#x}", phdr_addr);
         }
 
         let pos = (phdr.p_vaddr + phdr.p_filesz) as usize;
@@ -284,7 +284,7 @@ fn load_elf_binary(
     phdr_addr += load_bias;
     elf_bss += load_bias;
     elf_brk += load_bias;
-    error!("entry {:#x} elf_bss {:#x} elf_brk {:#x}", entry, elf_bss, elf_brk);
+    debug!("entry {:#x} elf_bss {:#x} elf_brk {:#x}", entry, elf_bss, elf_brk);
 
     info!("set brk...");
     set_brk(elf_bss, elf_brk);
@@ -314,7 +314,7 @@ fn arch_setup_additional_pages() {
 }
 
 fn create_elf_tables(e_phnum: usize, interp_load_addr: usize, e_entry: usize, phdr_addr: usize) {
-    error!("create_elf_tables: e_phum {:#x}, interp_load_addr {:#x} e_entry {:#x} phdr_addr {:#x}",
+    debug!("create_elf_tables: e_phum {:#x}, interp_load_addr {:#x} e_entry {:#x} phdr_addr {:#x}",
            e_phnum, interp_load_addr, e_entry, phdr_addr);
 }
 
@@ -454,29 +454,28 @@ fn get_arg_page(
     let direct_va = mmap::faultin_page(TASK_SIZE - PAGE_SIZE, 0);
     let mut stack = UserStack::new(TASK_SIZE, direct_va + PAGE_SIZE);
     stack.push(&[null::<u64>()]);
-    error!("top1 {:#x}", stack.get_sp());
 
     assert!(argv.len() > 0);
     stack.push_str(&argv[0]);
     let exec_fname = stack.get_sp();
-    error!("exec {:#x}", stack.get_sp());
+    debug!("exec {:#x}", stack.get_sp());
 
     for env in envp.iter().rev() {
         stack.push_str(&env);
     }
     let mut env_start = stack.get_sp();
-    error!("envp {:#x}", stack.get_sp());
+    debug!("envp {:#x}", stack.get_sp());
 
     for arg in argv.iter().rev() {
         stack.push_str(&arg);
     }
     let mut arg_start = stack.get_sp();
-    error!("argv {:#x}", stack.get_sp());
+    debug!("argv {:#x}", stack.get_sp());
 
     let random_str: &[usize; 2] = &[0, 0];
     stack.push(random_str.as_slice());
     let u_rand_bytes = stack.get_sp();
-    error!("random {:#x} AT_VECTOR_SIZE {:#x}", stack.get_sp(), AT_VECTOR_SIZE);
+    debug!("random {:#x} AT_VECTOR_SIZE {:#x}", stack.get_sp(), AT_VECTOR_SIZE);
 
     // Note: Just for riscv64
     const ELF_HWCAP: usize = 0x112d;
@@ -503,7 +502,7 @@ fn get_arg_page(
     new_aux_ent(&mut saved_auxv, AT_NULL, 0);
 
     let mut sp = stack.get_sp() - saved_auxv.len() * 8;
-    error!("ei_index: {}; sp {:#x}", saved_auxv.len(), sp);
+    debug!("ei_index: {}; sp {:#x}", saved_auxv.len(), sp);
 
     // For X86_64, Stack must be aligned to 16-bytes.
     // E.g., there're some SSE instructions like 'movaps %xmm0,-0x70(%rbp)'.
@@ -511,7 +510,7 @@ fn get_arg_page(
     // Or mmu causes #GP.
     let items = (argv.len() + 1) + (envp.len() + 1) + 1;
     sp = align_down(sp - items * 8, 16);
-    error!("sp {:#x}", sp);
+    debug!("sp {:#x}", sp);
 
     // Todo: Check whether there's enough space for CURRENT stack.
 
@@ -533,13 +532,13 @@ fn get_arg_page(
 
     /* Populate list of envp pointers back to envp strings. */
     for _ in 0..envp.len() {
-        error!("env: {:#x}", env_start);
+        debug!("env: {:#x}", env_start);
         pos = put_user(env_start, pos);
         let len = strnlen_user(env_start, MAX_ARG_STRLEN);
         if len == 0 || len > MAX_ARG_STRLEN {
             panic!("EINVAL");
         }
-        error!("len: {:#x}", len);
+        debug!("len: {:#x}", len);
         env_start += len;
     }
     pos = put_user(0, pos);
@@ -547,24 +546,26 @@ fn get_arg_page(
     /* Put the elf_info on the stack in the right place.  */
     let _ = copy_to_user(pos, &saved_auxv);
 
-    show_mem(sp);
+    //show_mem(sp);
     assert!(is_aligned(sp, 16));
     warn!("stack sp {:#x}", sp);
     Ok(sp)
 }
 
+/*
 fn show_mem(mut pos: usize) {
     assert!(is_aligned(pos, 16));
     for _ in 0..4 {
         let ptr = pos as *const usize;
         unsafe {
-            error!("[{:x} {:x} {:x} {:x} {:x} {:x} {:x} {:x}]",
+            debug!("[{:x} {:x} {:x} {:x} {:x} {:x} {:x} {:x}]",
                *ptr.add(0), *ptr.add(1), *ptr.add(2), *ptr.add(3),
                *ptr.add(4), *ptr.add(5), *ptr.add(6), *ptr.add(7));
         }
         pos += 8 * 8;
     }
 }
+*/
 
 fn put_user(val: usize, pos: usize) -> usize {
     let ptr = pos as *mut usize;
@@ -578,7 +579,7 @@ fn strnlen_user(pos: usize, max: usize) -> usize {
     unsafe {
         let s = CStr::from_ptr(pos as *const c_char);
         assert!(s.count_bytes() < max);
-        error!("s = {:?} {}", s, s.count_bytes());
+        debug!("s = {:?} {}", s, s.count_bytes());
         s.count_bytes() + 1
     }
 }

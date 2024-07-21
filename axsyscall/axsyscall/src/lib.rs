@@ -85,7 +85,7 @@ pub fn do_syscall(args: SyscallArgs, sysno: usize) -> usize {
 
 fn linux_syscall_faccessat(args: SyscallArgs) -> usize {
     let [dfd, filename, mode, ..] = args;
-    error!(
+    debug!(
         "linux_syscall_faccessat dfd {:#X} filename {:#X} mode {}",
         dfd, filename, mode
     );

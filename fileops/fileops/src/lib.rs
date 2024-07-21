@@ -54,7 +54,7 @@ pub fn openat(dfd: usize, filename: &str, flags: usize, mode: usize) -> AxResult
     let fs = current.fs.lock();
 
     let path = handle_path(dfd, filename);
-    error!("openat path {}", path);
+    debug!("openat path {}", path);
     File::open(&path, &opts, &fs).or_else(|e| {
         if e == NotFound {
             // Handle special filesystem, e.g., procfs, sysfs ..
@@ -206,7 +206,7 @@ pub fn writev(fd: usize, iov_array: &[iovec]) -> usize {
         debug!("iov: {:#X} {:#X}", iov.iov_base, iov.iov_len);
         let bytes = unsafe { core::slice::from_raw_parts(iov.iov_base as *const _, iov.iov_len) };
         let s = String::from_utf8(bytes.into());
-        error!("{}", s.unwrap());
+        debug!("{}", s.unwrap());
     }
     iov_array.len()
 }
@@ -446,7 +446,7 @@ pub fn ftruncate(fd: usize, length: usize) -> usize {
 }
 
 pub fn do_open(filename: &str, _flags: usize) -> LinuxResult<FileRef> {
-    error!("do_open path {}", filename);
+    debug!("do_open path {}", filename);
 
     let mut opts = OpenOptions::new();
     opts.read(true);

@@ -144,7 +144,7 @@ pub fn _mmap(
 
     if (flags & MAP_FIXED) == 0 {
         va = get_unmapped_vma(va, len);
-        error!("Get unmapped vma {:#X}", va);
+        debug!("Get unmapped vma {:#X}", va);
     }
 
     if va > TASK_SIZE - len {
@@ -273,7 +273,7 @@ pub fn get_unmapped_vma(_va: usize, len: usize) -> usize {
     }
 
     if gap_end >= len {
-        error!("get_unmapped_vma: {:#X}", gap_end - len);
+        debug!("get_unmapped_vma: {:#X}", gap_end - len);
         return gap_end - len;
     }
     unimplemented!("NO available unmapped vma!");
@@ -487,7 +487,7 @@ fn sync_file(va: usize, len: usize, file: &mut File, offset: usize) {
 pub fn munmap(va: usize, mut len: usize) -> usize {
     assert!(is_aligned_4k(va));
     len = align_up_4k(len);
-    error!("munmap {:#X} - {:#X}", va, va + len);
+    debug!("munmap {:#X} - {:#X}", va, va + len);
 
     while let Some(mut overlap) = find_overlap(va, len) {
         debug!("find overlap {:#X}-{:#X}", overlap.vm_start, overlap.vm_end);
