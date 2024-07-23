@@ -3,7 +3,6 @@
 #[macro_use]
 extern crate log;
 extern crate alloc;
-use alloc::vec;
 use alloc::vec::Vec;
 use alloc::string::String;
 
@@ -18,7 +17,7 @@ pub fn kernel_execve(filename: &str, argv: Vec<String>, envp: Vec<String>) -> Li
 
     let (entry, sp) = bprm_loader::execve(filename, 0, argv, envp)?;
 
-    info!("start thread...");
+    info!("start thread... usp {:#x}", sp);
     start_thread(task::current().pt_regs_addr(), entry, sp);
     Ok(())
 }
@@ -37,12 +36,7 @@ pub fn execve(path: &str, argv: usize, envp: usize) -> usize {
         info!("env: {}", env);
     }
 
-    task::alloc_mm();
-
-    let (entry, sp) = bprm_loader::execve(path, 0, args, vec![]).expect("exec error!");
-
-    info!("start thread...");
-    start_thread(task::current().pt_regs_addr(), entry, sp);
+    kernel_execve(path, args, envp).expect("exec error!");
     0
 }
 
