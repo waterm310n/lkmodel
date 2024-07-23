@@ -1,4 +1,4 @@
-TARGETS := init vfork execl run signal mmap
+TARGETS := init vfork execl run signal mmap procfs mount
 
 CC := $(ARCH)-linux-gnu-gcc
 STRIP := $(ARCH)-linux-gnu-strip
