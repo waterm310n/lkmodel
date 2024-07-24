@@ -13,7 +13,7 @@ mod proc_ops;
 use axerrno::AxResult;
 use axerrno::{LinuxError, LinuxResult, linux_err, linux_err_from};
 use axerrno::AxError::NotFound;
-use axfile::api::create_dir;
+use axfile::api::{create_dir, remove_dir};
 use axfile::fops::File;
 use axfile::fops::OpenOptions;
 use mutex::Mutex;
@@ -383,6 +383,19 @@ pub fn mkdirat(dfd: usize, pathname: &str, mode: usize) -> usize {
     let current = task::current();
     let fs = current.fs.lock();
     match create_dir(pathname, &fs) {
+        Ok(()) => 0,
+        Err(e) => linux_err_from!(e),
+    }
+}
+
+pub fn unlinkat(dfd: usize, path: &str, flags: usize) -> usize {
+    info!("unlinkat: dfd {:#X}, path {}, flags {:#x}", dfd, path, flags);
+    assert_eq!(dfd, AT_FDCWD);
+
+    let current = task::current();
+    let fs = current.fs.lock();
+    // Todo: distinguish dir&file
+    match remove_dir(path, &fs) {
         Ok(()) => 0,
         Err(e) => linux_err_from!(e),
     }
