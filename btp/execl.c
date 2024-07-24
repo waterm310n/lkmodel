@@ -5,7 +5,7 @@
 
 int main()
 {
-    printf("Hello, vfork!\n");
+    printf("Hello, execl!\n");
 
     pid_t pid = vfork();
     if (pid == 0) {

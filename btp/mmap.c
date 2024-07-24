@@ -1,7 +1,23 @@
 #include <stdio.h>
+#include <stdlib.h>
+#include <sys/mount.h>
+
+static int mount_procfs()
+{
+    if (mount("proc", "/proc", "proc", 0, NULL) != 0) {
+        printf("mount proc error!\n");
+        return -1;
+    }
+}
 
 int main()
 {
+    printf("Hello, mmap!\n");
+
+    if (mount_procfs() < 0) {
+        exit(-1);
+    }
+
     FILE *fp = fopen("/proc/self/maps", "r");
 
     while (1) {
