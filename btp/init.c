@@ -1,26 +1,46 @@
 #include <stdio.h>
 #include <stdlib.h>
+#include <sys/wait.h>
+#include <unistd.h>
+#include <sys/stat.h>
+#include <sys/types.h>
 
-unsigned long ax_sqrt(unsigned long n)
-{
-    unsigned long x = n;
-    while (1) {
-        if (x * x <= n && (x + 1) * (x + 1) > n) {
-            return x;
-        }
-        x = (x + n / x) / 2;
+void init_mount() {
+    printf("init_mount\n");
+
+    mkdir("/proc", 0755);
+
+    pid_t pid = vfork();
+    if (pid == 0) {
+        execl("/sbin/mount", "mount", "-t", "proc","proc","/proc", NULL);
+        exit(0);
     }
+    int ret = 0;
+    waitpid(pid, &ret, 0);
+
+    // pid = vfork();
+    // if (pid == 0) {
+    //     execl("/sbin/mount", "mount", "-a", NULL);
+    //     exit(0);
+    // }
+    // waitpid(pid, NULL, 0);
 }
 
-int main()
+int main(int argc, char *argv[])
 {
-    int i;
-    int seed;
-    for (i = 0; i < 1000000; i++) {
-        // Only for consuming time.
-        seed += ax_sqrt(1048577+i);
+    printf("Hello, init!\n");
+
+    init_mount();
+    printf("init mount successfully\n");
+
+    pid_t pid = vfork();
+    if (pid == 0) {
+        execl("/sbin/procfs", "procfs" ,NULL);
+        exit(0);
     }
-    unsigned long ret = ax_sqrt(seed);
-    printf("[userland]: Hello, Init! Sqrt(1048577) = %lu \n", ret);
+
+    int ret = 0;
+    waitpid(pid, &ret, 0);
+
     return 0;
 }
