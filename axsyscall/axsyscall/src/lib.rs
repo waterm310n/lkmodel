@@ -71,6 +71,7 @@ pub fn do_syscall(args: SyscallArgs, sysno: usize) -> usize {
         LINUX_SYSCALL_SCHED_GETAFFINITY => linux_syscall_sched_getaffinity(args),
         LINUX_SYSCALL_CAPGET => linux_syscall_capget(args),
         LINUX_SYSCALL_SETITIMER => linux_syscall_setitimer(args),
+        LINUX_SYSCALL_MOUNT => linux_syscall_mount(args),
         #[cfg(target_arch = "riscv64")]
         LINUX_SYSCALL_GETDENTS64 => linux_syscall_getdents64(args),
         #[cfg(target_arch = "x86_64")]
@@ -464,6 +465,11 @@ fn linux_syscall_exit_group(args: SyscallArgs) -> usize {
 #[cfg(target_arch = "x86_64")]
 fn linux_syscall_vfork(_args: SyscallArgs) -> usize {
     fork::sys_vfork()
+}
+
+fn linux_syscall_mount(_args: SyscallArgs) -> usize {
+    // TODO: implement mount syscall
+    0
 }
 
 pub fn init() {
