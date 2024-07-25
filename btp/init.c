@@ -15,8 +15,9 @@ void init_mount() {
         execl("/sbin/mount", "mount", "-a", NULL);
         exit(0);
     }
-    int ret = 0;
-    waitpid(pid, &ret, 0);
+    fprintf(stderr,"child pid is %d",pid);
+
+    waitpid(pid, NULL, 0);
 }
 
 int main(int argc, char *argv[])
@@ -32,8 +33,7 @@ int main(int argc, char *argv[])
         exit(0);
     }
 
-    int ret = 0;
-    waitpid(pid, &ret, 0);
+    waitpid(pid, NULL, 0);
 
     return 0;
 }
