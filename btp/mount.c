@@ -22,7 +22,7 @@ int main(int argc, char *argv[]) {
     pid_t pid = vfork();
     if (pid == 0) {
         printf("Child is running ...\n");
-        execl("/sbin/procfs", "procfs", NULL);
+        execl("/btp/sbin/procfs", "procfs", NULL);
         exit(0);
     } else {
         int ret = 0;

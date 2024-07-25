@@ -41,20 +41,37 @@ endef
 define riscv64_install_apps
   @mkdir -p ./mnt
   @sudo mount $(1) ./mnt
+
+  @sudo mkdir -p ./mnt/sbin
+  @sudo mkdir -p ./mnt/bin
   @sudo mkdir -p ./mnt/lib
+  @sudo mkdir -p ./mnt/tmp
+  @sudo mkdir -p ./mnt/proc
   @sudo mkdir -p ./mnt/testcases
   @sudo mkdir -p ./mnt/opt
+  @sudo mkdir -p ./mnt/btp
+
+  @sudo cp -rf ../busybox/output_riscv64/bin/busybox ./mnt/bin/ls
+
+  @sudo cp -r ./btp/build/riscv64/sbin/ ./mnt/btp/
+  @sudo cp ./btp/syscalls ./mnt/opt/
+  @sudo cp ../dash/src/dash ./mnt/btp/sbin/
+
+  @sudo cp ./mnt/btp/sbin/init ./mnt/sbin/init
+
   @sudo cp /usr/riscv64-linux-gnu/lib/ld-linux-riscv64-lp64d.so.1 ./mnt/lib/
   @sudo cp /usr/riscv64-linux-gnu/lib/libc.so.6 ./mnt/lib/
   @sudo cp /usr/riscv64-linux-gnu/lib/libm.so.6 ./mnt/lib/
   @sudo cp /usr/riscv64-linux-gnu/lib/libresolv.so.2 ./mnt/lib/
-  @sudo cp -r ./btp/build/riscv64/sbin ./mnt/
-  @sudo cp ./btp/syscalls ./mnt/opt/
+
   -@sudo cp -f $(LTP)/build_riscv64/testcases/bin/mmap[[:digit:]]* ./mnt/testcases/
+
   ls -l ./mnt/lib
   ls -l ./mnt/sbin
+  ls -l ./mnt/bin
   ls -l ./mnt/testcases
   ls -l ./mnt/opt
+  ls -l ./mnt/btp/sbin
   @sudo umount ./mnt
   @rm -rf mnt
 endef
