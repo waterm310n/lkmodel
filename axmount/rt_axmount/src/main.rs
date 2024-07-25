@@ -4,11 +4,8 @@
 #[macro_use]
 extern crate axlog2;
 extern crate alloc;
-use alloc::sync::Arc;
 
 use core::panic::PanicInfo;
-use axdriver::{AxDeviceContainer};
-use fstree::FsStruct;
 
 /// Entry
 #[no_mangle]

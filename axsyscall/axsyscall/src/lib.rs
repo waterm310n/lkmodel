@@ -148,11 +148,7 @@ fn linux_syscall_mkdirat(args: SyscallArgs) -> usize {
 fn linux_syscall_unlinkat(args: SyscallArgs) -> usize {
     let [dfd, path, flags, ..] = args;
     let path = get_user_str(path);
-    warn!(
-        "impl unlinkat dfd {}, path {} flags {:#X}",
-        dfd, path, flags
-    );
-    0
+    fileops::unlinkat(dfd, &path, flags)
 }
 
 fn linux_syscall_openat(args: SyscallArgs) -> usize {

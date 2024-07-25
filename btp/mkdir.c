@@ -48,5 +48,11 @@ int main(int argc, char *argv[]) {
             printf("mkdir %s ok!\n", target);
         }
     }
+    int ret = rmdir(target);
+    if (ret == -1) {
+        printf("rmdir %s error!\n", target);
+    } else {
+        printf("rmdir %s ok!\n", target);
+    }
     return 0;
 }

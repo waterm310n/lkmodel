@@ -37,15 +37,15 @@ pub fn execve(
 ) -> LinuxResult<(usize, usize)> {
     debug!("bprm_execve: {}", filename);
     let file = do_open_execat(filename, flags)?;
-    exec_binprm(file, argv, envp)
+    exec_binprm(filename, file, argv, envp)
 }
 
 fn do_open_execat(filename: &str, _flags: usize) -> LinuxResult<FileRef> {
     fileops::do_open(filename, _flags)
 }
 
-fn exec_binprm(file: FileRef, argv: Vec<String>, envp: Vec<String>) -> LinuxResult<(usize, usize)> {
-    load_elf_binary(file, argv, envp)
+fn exec_binprm(filename: &str, file: FileRef, argv: Vec<String>, envp: Vec<String>) -> LinuxResult<(usize, usize)> {
+    load_elf_binary(filename, file, argv, envp)
 }
 
 fn total_mapping_size(phdrs: &Vec<ProgramHeader>) -> usize {
@@ -182,7 +182,7 @@ fn elf_map(
 }
 
 fn load_elf_binary(
-    file: FileRef, argv: Vec<String>, envp: Vec<String>
+    filename: &str, file: FileRef, argv: Vec<String>, envp: Vec<String>
 ) -> LinuxResult<(usize, usize)> {
     let mut interp_file = None;
     let mut load_addr_set = false;
@@ -304,7 +304,7 @@ fn load_elf_binary(
 
     create_elf_tables(e_phnum, interp_load_addr, entry, phdr_addr);
 
-    let sp = get_arg_page(e_phnum, interp_load_addr, entry, phdr_addr, elf_entry, argv, envp)?;
+    let sp = get_arg_page(filename, e_phnum, interp_load_addr, entry, phdr_addr, elf_entry, argv, envp)?;
     Ok((elf_entry, sp))
 }
 
@@ -443,6 +443,7 @@ fn new_aux_ent(elf_info: &mut Vec<usize>, id: usize, val: usize) {
 }
 
 fn get_arg_page(
+    filename: &str,
     e_phnum: usize, interp_load_addr: usize, entry: usize, phdr_addr: usize,
     _entry: usize, argv: Vec<String>, envp: Vec<String>
 ) -> LinuxResult<usize> {
@@ -454,9 +455,10 @@ fn get_arg_page(
     let direct_va = mmap::faultin_page(TASK_SIZE - PAGE_SIZE, 0);
     let mut stack = UserStack::new(TASK_SIZE, direct_va + PAGE_SIZE);
     stack.push(&[null::<u64>()]);
+    debug!("initial: {:#x}", stack.get_sp());
 
     assert!(argv.len() > 0);
-    stack.push_str(&argv[0]);
+    stack.push_str(filename);
     let exec_fname = stack.get_sp();
     debug!("exec {:#x}", stack.get_sp());
 
@@ -502,7 +504,7 @@ fn get_arg_page(
     new_aux_ent(&mut saved_auxv, AT_NULL, 0);
 
     let mut sp = stack.get_sp() - saved_auxv.len() * 8;
-    debug!("ei_index: {}; sp {:#x}", saved_auxv.len(), sp);
+    debug!("ei_index: {}; sp {:#x}, orig {:#x}", saved_auxv.len(), sp, stack.get_sp());
 
     // For X86_64, Stack must be aligned to 16-bytes.
     // E.g., there're some SSE instructions like 'movaps %xmm0,-0x70(%rbp)'.

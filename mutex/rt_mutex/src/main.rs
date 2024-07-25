@@ -4,8 +4,6 @@
 #[macro_use]
 extern crate axlog2;
 extern crate alloc;
-use alloc::sync::Arc;
-//use alloc::vec;
 
 use core::panic::PanicInfo;
 use axtype::{align_up_4k, align_down_4k, phys_to_virt, virt_to_phys};

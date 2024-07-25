@@ -13,12 +13,13 @@ mod proc_ops;
 use axerrno::AxResult;
 use axerrno::{LinuxError, LinuxResult, linux_err, linux_err_from};
 use axerrno::AxError::NotFound;
-use axfile::api::create_dir;
+use axfile::api::{create_dir, remove_dir, remove_file};
 use axfile::fops::File;
 use axfile::fops::OpenOptions;
 use mutex::Mutex;
 use axtype::get_user_str;
 use axio::SeekFrom;
+use axfs_vfs::VfsNodeType;
 
 pub type FileRef = Arc<Mutex<File>>;
 
@@ -388,6 +389,28 @@ pub fn mkdirat(dfd: usize, pathname: &str, mode: usize) -> usize {
     }
 }
 
+pub fn unlinkat(dfd: usize, path: &str, flags: usize) -> usize {
+    info!("unlinkat: dfd {:#X}, path {}, flags {:#x}", dfd, path, flags);
+    assert_eq!(dfd, AT_FDCWD);
+
+    let current = task::current();
+    let fs = current.fs.lock();
+    // Todo: distinguish dir&file
+    let ty = filetype(path).unwrap();
+    if ty.is_dir() {
+        match remove_dir(path, &fs) {
+            Ok(()) => 0,
+            Err(e) => linux_err_from!(e),
+        }
+    } else {
+        assert!(ty.is_file());
+        match remove_file(path, &fs) {
+            Ok(()) => 0,
+            Err(e) => linux_err_from!(e),
+        }
+    }
+}
+
 pub fn getcwd(buf: &mut [u8]) -> usize {
     let cwd = _getcwd();
     info!("getcwd {}", cwd);
@@ -455,6 +478,17 @@ pub fn do_open(filename: &str, _flags: usize) -> LinuxResult<FileRef> {
     let fs = current.fs.lock();
     let file = File::open(filename, &opts, &fs)?;
     Ok(Arc::new(Mutex::new(file)))
+}
+
+pub fn filetype(fname: &str) -> LinuxResult<VfsNodeType> {
+    let mut opts = OpenOptions::new();
+    opts.read(true);
+
+    let current = task::current();
+    let fs = current.fs.lock();
+    let file = File::open(fname, &opts, &fs)?;
+    let metadata = file.get_attr()?;
+    Ok(metadata.file_type())
 }
 
 pub fn fcntl(fd: usize, cmd: usize, udata: usize) -> usize {
