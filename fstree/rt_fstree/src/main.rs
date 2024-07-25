@@ -7,7 +7,6 @@ extern crate alloc;
 
 use alloc::string::ToString;
 use core::panic::PanicInfo;
-use fstree::FsStruct;
 
 #[no_mangle]
 pub extern "Rust" fn runtime_main(cpu_id: usize, dtb_pa: usize) {

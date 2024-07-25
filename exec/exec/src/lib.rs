@@ -25,9 +25,8 @@ pub fn kernel_execve(filename: &str, argv: Vec<String>, envp: Vec<String>) -> Li
 pub fn execve(path: &str, argv: usize, envp: usize) -> usize {
     info!("execve: {}", path);
 
-    let mut args = get_user_str_vec(argv);
+    let args = get_user_str_vec(argv);
     assert!(args.len() > 0);
-    args[0] = String::from(path);
     for arg in &args {
         info!("arg: {}", arg);
     }
