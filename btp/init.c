@@ -12,18 +12,11 @@ void init_mount() {
 
     pid_t pid = vfork();
     if (pid == 0) {
-        execl("/sbin/mount", "mount", "-t", "proc","proc","/proc", NULL);
+        execl("/sbin/mount", "mount", "-a", NULL);
         exit(0);
     }
     int ret = 0;
     waitpid(pid, &ret, 0);
-
-    // pid = vfork();
-    // if (pid == 0) {
-    //     execl("/sbin/mount", "mount", "-a", NULL);
-    //     exit(0);
-    // }
-    // waitpid(pid, NULL, 0);
 }
 
 int main(int argc, char *argv[])
