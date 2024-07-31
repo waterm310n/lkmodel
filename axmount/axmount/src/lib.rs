@@ -1,4 +1,6 @@
 #![no_std]
+#![feature(maybe_uninit_uninit_array)]
+#![feature(maybe_uninit_array_assume_init)]
 
 #[macro_use]
 extern crate log;
@@ -20,6 +22,10 @@ cfg_if::cfg_if! {
     } else if #[cfg(feature = "fatfs")] {
         use crate::fs::fatfs::FatFileSystem;
         type FsType = Arc<FatFileSystem>;
+    } else {
+        use crate::fs::ext2fs::Ext2Fs;
+        use crate::dev::Disk;
+        type FsType = Arc<Ext2Fs>;
     }
 }
 
@@ -39,6 +45,8 @@ pub fn init_filesystems(mut blk_devs: AxDeviceContainer<AxBlockDevice>, need_fmt
             FAT_FS.init_by(Arc::new(fs::fatfs::FatFileSystem::new(disk, need_fmt)));
             FAT_FS.init();
             let main_fs = FAT_FS.clone();
+        } else {
+            let main_fs = Ext2Fs::init(disk);
         }
     }
 

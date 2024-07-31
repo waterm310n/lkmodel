@@ -11,9 +11,10 @@ ramfs = []
 procfs = []
 sysfs = []
 fatfs = []
+ext2fs = []
 use-ramdisk = []
 
-default = ["devfs", "ramfs", "fatfs", "procfs", "sysfs"]
+default = ["devfs", "ramfs", "ext2fs", "procfs", "sysfs"]
 
 [dependencies]
 log = "0.4"
@@ -26,3 +27,8 @@ axfs_vfs = { git = "ssh://git@github.com/shilei-massclouds/axfs_vfs.git" }
 lazy_init = { git = "ssh://git@github.com/shilei-massclouds/lazy_init.git" }
 rust_fatfs = { git = "ssh://git@github.com/shilei-massclouds/rust_fatfs.git" }
 axconfig = { git = "ssh://git@github.com/shilei-massclouds/axconfig" }
+axerrno = { git = "ssh://git@github.com/shilei-massclouds/axerrno" }
+axhal = { git = "ssh://git@github.com/shilei-massclouds/axhal" }
+
+bitflags = "2.3.2"
+bit_field = "0.10.2"
