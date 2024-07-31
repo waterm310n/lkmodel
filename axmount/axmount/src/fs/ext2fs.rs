@@ -1354,8 +1354,9 @@ impl VfsNodeOps for Ext2Inode {
 
     fn lookup(self: Arc<Self>, path: &str) -> VfsResult<VfsNodeRef> {
         let ino = self.entry.directory.get_inode();
-        let inode = Ext2Fs::get().lookup(ino, path).unwrap();
-        Ok(inode)
+        Ok(Ext2Fs::get().lookup(ino, path)?)
+        //let inode = Ext2Fs::get().lookup(ino, path).unwrap();
+        //Ok(inode)
     }
 
     fn get_attr(&self) -> VfsResult<VfsNodeAttr> {

@@ -252,6 +252,16 @@ impl fmt::Display for AxError {
     }
 }
 
+impl From<LinuxError> for AxError {
+    fn from(e: LinuxError) -> Self {
+        use AxError::*;
+        match e {
+            LinuxError::ENOENT => NotFound,
+            _ => todo!("{:?}", e),
+        }
+    }
+}
+
 impl From<AxError> for LinuxError {
     fn from(e: AxError) -> Self {
         use AxError::*;
