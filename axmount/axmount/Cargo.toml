@@ -15,6 +15,7 @@ ext2fs = []
 use-ramdisk = []
 
 default = ["devfs", "ramfs", "ext2fs", "procfs", "sysfs"]
+#default = ["devfs", "ramfs", "fatfs", "procfs", "sysfs"]
 
 [dependencies]
 log = "0.4"

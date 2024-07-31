@@ -44,6 +44,8 @@ NET ?= n
 GRAPHIC ?= n
 BUS ?= mmio
 
+FS_TYPE ?= ext2
+#FS_TYPE ?= fat32
 DISK_IMG ?= disk.img
 QEMU_LOG ?= y
 NET_DUMP ?= n
@@ -211,7 +213,7 @@ disk_img:
 ifneq ($(wildcard $(DISK_IMG)),)
 	@printf "$(YELLOW_C)warning$(END_C): disk image \"$(DISK_IMG)\" already exists!\n"
 else
-	$(call make_disk_image,ext2,$(DISK_IMG))
+	$(call make_disk_image,$(FS_TYPE),$(DISK_IMG))
 endif
 
 linux_img: linux_apps
@@ -219,7 +221,7 @@ ifneq ($(wildcard $(DISK_IMG)),)
 	@printf "$(YELLOW_C)warning$(END_C): image \"$(DISK_IMG)\" will be overwritten!\n"
 	@printf "Please rename it for backup or just delete it!\n"
 else
-	$(call make_disk_image,ext2,$(DISK_IMG))
+	$(call make_disk_image,$(FS_TYPE),$(DISK_IMG))
 	$(call build_linux_image,$(DISK_IMG))
 endif
 
