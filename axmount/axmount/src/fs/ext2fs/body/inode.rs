@@ -7,7 +7,9 @@ use bitflags::bitflags;
 
 use core::mem::size_of;
 
+#[allow(non_camel_case_types)]
 pub type gid_t = u32;
+#[allow(non_camel_case_types)]
 pub type uid_t = u32;
 
 // Like blocks, each inode has a numerical address. It is extremely important to note that unlike block addresses, inode addresses start at 1.
@@ -107,6 +109,7 @@ impl Inode {
     /// write the 'fast' symlink target (whole len must be <=
     /// FAST_SYMLINK_SIZE_MAX) directly on the inode. Panic if len >
     /// FAST_SYMLINK_SIZE_MAX
+    #[allow(unused)]
     pub fn write_symlink(&mut self, target: &str) {
         let target_len = target.len();
         assert!(target_len <= Self::FAST_SYMLINK_SIZE_MAX);
@@ -131,10 +134,12 @@ impl Inode {
         self
     }
 
+    #[allow(unused)]
     pub fn is_a_directory(&self) -> bool {
         self.type_and_perm.is_directory()
     }
 
+    #[allow(unused)]
     pub fn is_a_regular_file(&self) -> bool {
         self.type_and_perm.is_regular()
     }

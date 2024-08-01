@@ -1,13 +1,5 @@
 //! This file describe all the Directory Entry Header model
-/*
-use super::TypePerm;
 
-use nix::errno::Errno;
-use nix::sys::stat::SFlag;
-
-use std::convert::{TryFrom, TryInto};
-use std::io::{Read, Seek, Write};
-*/
 use core::fmt;
 use core::ffi::c_char;
 use core::mem::size_of;
@@ -80,6 +72,7 @@ impl fmt::Debug for DirectoryEntry {
 // 7 	Symbolic link (soft link)
 #[derive(Debug, Copy, Clone, Eq, PartialEq)]
 #[repr(u8)]
+#[allow(unused)]
 pub enum DirectoryEntryType {
     RegularFile = 1,
     Directory,
@@ -123,6 +116,7 @@ impl DirectoryEntry {
     }
 
     /// Set the file name
+    #[allow(unused)]
     pub fn set_filename(&mut self, filename: &str) -> LinuxResult<()> {
         let filenamelen = filename.len();
         assert!(filenamelen <= FILENAME_MAX as usize);

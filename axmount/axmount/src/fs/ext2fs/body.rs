@@ -6,8 +6,7 @@ mod directory_entry;
 
 pub use inode::{Inode, gid_t, uid_t};
 pub use typeperm::{TypePerm, Mode, SFlag};
-//pub use typeperm::{TypePerm, PERMISSIONS_MASK, SPECIAL_BITS};
-pub use directory_entry::{DirectoryEntry, DirectoryEntryHeader, DirectoryEntryType};
+pub use directory_entry::{DirectoryEntry, DirectoryEntryType};
 
 use core::{borrow::Borrow, cmp::Ordering};
 

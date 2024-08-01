@@ -17,7 +17,6 @@ use lazy_init::LazyInit;
 use crate::dev::Disk;
 use crate::fs::path::Path;
 use bit_field::{BitArray, BitField};
-use core::ffi::c_void;
 use crate::fs::ext2fs::body::Mode;
 use crate::fs::ext2fs::body::{uid_t, gid_t};
 use mutex::Mutex;
@@ -42,13 +41,13 @@ pub struct Ext2Fs {
 }
 
 impl Ext2Fs {
-    pub fn new(mut disk: Disk) -> Self {
+    pub fn new(disk: Disk) -> Self {
         Self {
             inner: Mutex::new(Ext2Filesystem::new(disk).unwrap()),
         }
     }
 
-    pub fn init(mut disk: Disk) -> Arc<Self> {
+    pub fn init(disk: Disk) -> Arc<Self> {
         EXT2_FS.init_by(Arc::new(Self::new(disk)));
         EXT2_FS.clone()
     }
@@ -381,7 +380,6 @@ impl Ext2Filesystem {
                 Ok(Arc::new(Ext2Inode::new(entry)))
             },
             None => {
-                error!("lookup: path: {}, ino: {:?}", path, ino);
                 Err(LinuxError::ENOENT)
             },
         }
@@ -1324,7 +1322,7 @@ impl Ext2Disk for Disk {
                     buf = &buf[n..];
                     write_len += n;
                 }
-                Err(e) => return Err(LinuxError::EIO),
+                Err(_) => return Err(LinuxError::EIO),
             }
         }
         Ok(write_len as u64)
@@ -1346,7 +1344,7 @@ impl Ext2Disk for Disk {
                     buf = &mut tmp[n..];
                     read_len += n;
                 }
-                Err(e) => return Err(LinuxError::EIO),
+                Err(_) => return Err(LinuxError::EIO),
             }
         }
         Ok(read_len as u64)
@@ -1385,7 +1383,6 @@ impl VfsNodeOps for Ext2Inode {
         match ty {
             VfsNodeType::File => {
                 unimplemented!();
-                Ok(())
             }
             VfsNodeType::Dir => {
                 let ino = self.entry.directory.get_inode();
@@ -1400,7 +1397,6 @@ impl VfsNodeOps for Ext2Inode {
         let inode = self.entry.inode;
         if inode.type_and_perm.is_regular() {
             unimplemented!();
-            Ok(())
         } else if  inode.type_and_perm.is_directory() {
             let ino = self.entry.directory.get_inode();
             let _ = Ext2Fs::get().remove_dir(ino, path);
@@ -1441,7 +1437,7 @@ impl VfsNodeOps for Ext2Inode {
         Ok(ret as usize)
     }
 
-    fn write_at(&self, offset: u64, buf: &[u8]) -> VfsResult<usize> {
+    fn write_at(&self, _offset: u64, _buf: &[u8]) -> VfsResult<usize> {
         unimplemented!();
     }
 }

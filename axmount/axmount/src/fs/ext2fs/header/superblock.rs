@@ -170,6 +170,7 @@ impl SuperBlock {
     }
 
     /// True if directories entry have file type
+    #[allow(unused)]
     pub fn directory_entry_contain_type_field(&self) -> bool {
         let flag = self.required_features_flag;
         flag.contains(RequiredFeaturesFlag::DIRECTORY_ENTRIES_CONTAIN_A_TYPE_FIELD)
@@ -252,6 +253,7 @@ bitflags! {
 /// Indication about the last mount moment
 #[derive(Copy, Clone)]
 #[repr(transparent)]
+#[allow(dead_code)]
 struct PathVolumeLastMounted([u8; 64]);
 
 /// Debug boilerplate for PathVolumeLastMounted
