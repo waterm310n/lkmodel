@@ -142,11 +142,11 @@ impl TypePerm {
         SFlag::from_bits_truncate(self.0 as u32) == SFlag::S_IFDIR
     }
 
-    /*
     pub fn is_symlink(&self) -> bool {
         SFlag::from_bits_truncate(self.0 as u32) == SFlag::S_IFLNK
     }
 
+    /*
     pub fn is_socket(&self) -> bool {
         SFlag::from_bits_truncate(self.0 as u32) == SFlag::S_IFSOCK
     }

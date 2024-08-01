@@ -11,7 +11,7 @@ pub struct Path {
 impl Path {
     pub fn new(path: &str) -> Self {
         Self {
-            inner: String::from(path),
+            inner: String::from(path.trim_end_matches('/')),
         }
     }
 
@@ -20,9 +20,8 @@ impl Path {
     }
 
     pub fn parent(&self) -> Option<&str> {
-        let mut iter = self.components();
-        let _ = iter.next_back();
-        iter.next_back().map(|p| if p == "" { "/" } else { p })
+        let (parent, _) = self.inner.rsplit_once('/')?;
+        Some(parent)
     }
 
     pub fn file_name(&self) -> Option<&str> {

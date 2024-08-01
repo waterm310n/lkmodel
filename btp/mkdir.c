@@ -42,8 +42,12 @@ int main(int argc, char *argv[]) {
     for (i = 0; i < 2; i++) {
         int ret = mkdir(target, 0755);
         if (ret == -1) {
-            printf("mkdir %s error!\n", target);
-            err_reason(ret);
+            if (i == 1 && errno == EEXIST) {
+                printf("mkdir %s [expected error]: EEXIST!\n", target);
+            } else {
+                printf("mkdir %s error: ", target);
+                err_reason(ret);
+            }
         } else {
             printf("mkdir %s ok!\n", target);
         }
