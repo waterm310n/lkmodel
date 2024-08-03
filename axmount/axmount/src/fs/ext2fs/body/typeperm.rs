@@ -1,13 +1,10 @@
 //! This file describe Type and Permissions first inode field and methods
-/*
-use nix::errno::Errno;
-use nix::sys::stat::{Mode, SFlag};
-use nix::unistd::AccessFlags;
-*/
+
 use bitflags::bitflags;
+use axerrno::LinuxError;
 
 bitflags! {
-    #[derive(PartialEq)]
+    #[derive(PartialEq, Eq)]
     pub struct SFlag: u32 {
         const S_IFMT   = 0o170000;
         const S_IFSOCK = 0o140000;
@@ -41,16 +38,6 @@ bitflags! {
         const S_IXOTH = 0o001;
     }
 }
-
-/*
-#define S_ISLNK(m)  (((m) & S_IFMT) == S_IFLNK)
-#define S_ISREG(m)  (((m) & S_IFMT) == S_IFREG)
-#define S_ISDIR(m)  (((m) & S_IFMT) == S_IFDIR)
-#define S_ISCHR(m)  (((m) & S_IFMT) == S_IFCHR)
-#define S_ISBLK(m)  (((m) & S_IFMT) == S_IFBLK)
-#define S_ISFIFO(m) (((m) & S_IFMT) == S_IFIFO)
-#define S_ISSOCK(m) (((m) & S_IFMT) == S_IFSOCK)
-*/
 
 #[derive(Default, Debug, PartialEq, Copy, Clone, Eq)]
 pub struct TypePerm(pub u16);
@@ -114,12 +101,14 @@ impl TypePerm {
         let new_mode = self.0 | mode.bits() as u16;
         self.0 = new_mode;
     }
+    */
 
     pub fn extract_type(self) -> SFlag {
         let mask = SFlag::S_IFMT;
         SFlag::from_bits_truncate(self.0 as u32) & mask
     }
 
+    /*
     pub fn is_typed(&self) -> bool {
         !self.extract_type().is_empty()
     }
@@ -199,12 +188,11 @@ impl TypePerm {
     */
 }
 
-/*
-impl TryFrom<(libc::mode_t, SFlag)> for TypePerm {
-    type Error = Errno;
-    fn try_from(values: (libc::mode_t, SFlag)) -> Result<Self, Self::Error> {
+impl TryFrom<(u32, SFlag)> for TypePerm {
+    type Error = LinuxError;
+    fn try_from(values: (u32, SFlag)) -> Result<Self, Self::Error> {
         let (mode, filetype) = values;
-        let mode = Mode::from_bits(mode).ok_or(Errno::EINVAL)?;
+        let mode = Mode::from_bits(mode).ok_or(LinuxError::EINVAL)?;
         Ok(TypePerm(mode.bits() as u16 | filetype.bits() as u16))
     }
 }
@@ -217,4 +205,3 @@ pub enum PermissionClass {
     Group,
     Other,
 }
-*/

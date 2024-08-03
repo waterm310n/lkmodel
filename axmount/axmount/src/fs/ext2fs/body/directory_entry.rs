@@ -5,7 +5,7 @@ use core::ffi::c_char;
 use core::mem::size_of;
 use crate::Disk;
 use axerrno::{LinuxResult, LinuxError};
-use crate::fs::ext2fs::Ext2Disk;
+use crate::fs::ext2fs::{Ext2Disk, TypePerm, SFlag};
 
 // Directories are inodes which contain some number of "entries" as their contents.
 // These entries are nothing more than a name/inode pair. For instance the inode
@@ -83,9 +83,8 @@ pub enum DirectoryEntryType {
     SymbolicLink,
 }
 
-/*
 impl TryFrom<TypePerm> for DirectoryEntryType {
-    type Error = Errno;
+    type Error = LinuxError;
     fn try_from(file_type: TypePerm) -> Result<Self, Self::Error> {
         Ok(match file_type.extract_type() {
             SFlag::S_IFSOCK => DirectoryEntryType::Socket,
@@ -95,11 +94,10 @@ impl TryFrom<TypePerm> for DirectoryEntryType {
             SFlag::S_IFDIR => DirectoryEntryType::Directory,
             SFlag::S_IFCHR => DirectoryEntryType::CharacterDevice,
             SFlag::S_IFIFO => DirectoryEntryType::Fifo,
-            _ => Err(Errno::EINVAL)?,
+            _ => Err(LinuxError::EINVAL)?,
         })
     }
 }
-*/
 
 /// Implementations of the Directory Entry
 impl DirectoryEntry {

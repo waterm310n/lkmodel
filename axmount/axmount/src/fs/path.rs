@@ -4,6 +4,7 @@ use alloc::str::Split;
 use alloc::string::String;
 use core::fmt::{Display, Formatter};
 
+#[derive(Debug)]
 pub struct Path {
     inner: String,
 }

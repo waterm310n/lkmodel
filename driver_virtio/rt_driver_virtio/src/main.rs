@@ -10,7 +10,7 @@ use core::panic::PanicInfo;
 use driver_common::{BaseDriverOps, DeviceType};
 use driver_block::BlockDriverOps;
 
-const DISK_SIZE: usize = 0x800_0000;    // 128M
+const DISK_SIZE: usize = 0x1000_0000;    // 256M
 const BLOCK_SIZE: usize = 0x200;        // 512
 
 /// Entry

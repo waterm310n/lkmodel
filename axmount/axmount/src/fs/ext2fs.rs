@@ -9,6 +9,7 @@ use core::mem::MaybeUninit;
 use alloc::vec;
 use alloc::vec::Vec;
 use alloc::sync::Arc;
+use alloc::format;
 use tools::{align_next, err_if_zero, u32_align_next, Block};
 use header::{BlockGroupDescriptor, SuperBlock};
 use axerrno::{LinuxResult, LinuxError};
@@ -64,12 +65,24 @@ impl Ext2Fs {
         self.inner.lock().remove_dir(ino, path)
     }
 
+    pub fn create_file(&self, ino: u32, path: &str) -> LinuxResult<()> {
+        self.inner.lock().create_file(ino, path)
+    }
+
     pub fn lookup(self: Arc<Self>, ino: u32, path: &str) -> LinuxResult<VfsNodeRef> {
         self.inner.lock().lookup(ino, path)
     }
 
     pub fn read_at(&self, ino: u32, offset: &mut u64, buf: &mut [u8]) -> LinuxResult<u64> {
         self.inner.lock()._read_at(ino, offset, buf)
+    }
+
+    pub fn write_at(&self, ino: u32, offset: &mut u64, buf: &[u8]) -> LinuxResult<u64> {
+        self.inner.lock()._write_at(ino, offset, buf)
+    }
+
+    pub fn truncate(&self, ino: u32, new_size: u64) -> LinuxResult {
+        self.inner.lock()._truncate(ino, new_size)
     }
 }
 
@@ -194,6 +207,53 @@ impl Ext2Filesystem {
         Ok(*file_offset - file_curr_offset_start)
     }
 
+    pub fn _write_at(
+        &mut self,
+        inode_nbr: u32,
+        file_offset: &mut u64,
+        buf: &[u8],
+    ) -> LinuxResult<u64> {
+        let (mut inode, inode_addr) = self.get_inode(inode_nbr)?;
+        let file_curr_offset_start = *file_offset;
+        if *file_offset > inode.get_size() {
+            return Ok(0);
+        }
+        if buf.len() == 0 {
+            return Ok(0);
+        }
+        let data_address = self.inode_data_alloc((&mut inode, inode_addr), *file_offset)?;
+        let offset = min(
+            self.block_size as u64 - *file_offset % self.block_size as u64,
+            buf.len() as u64,
+        );
+        let data_write = self
+            .disk
+            .borrow_mut()
+            .write_buffer(data_address, &buf[0..offset as usize])?;
+        *file_offset += data_write as u64;
+        if inode.get_size() < *file_offset {
+            inode.update_size(*file_offset, self.block_size);
+            self.disk.borrow_mut().write_struct(inode_addr, &inode)?;
+        }
+        if data_write < offset {
+            return Ok(*file_offset - file_curr_offset_start);
+        }
+
+        for chunk in buf[offset as usize..].chunks(self.block_size as usize) {
+            let data_address = self.inode_data_alloc((&mut inode, inode_addr), *file_offset)?;
+            let data_write = self.disk.borrow_mut().write_buffer(data_address, &chunk)?;
+            *file_offset += data_write as u64;
+            if inode.get_size() < *file_offset {
+                inode.update_size(*file_offset, self.block_size);
+                self.disk.borrow_mut().write_struct(inode_addr, &inode)?;
+            }
+            if data_write < chunk.len() as u64 {
+                return Ok(*file_offset - file_curr_offset_start);
+            }
+        }
+        Ok(*file_offset - file_curr_offset_start)
+    }
+
     /// return all the (directory, inode) conainted in inode_nbr
     pub fn lookup_directory<'a>(
         &'a self, ino: u32
@@ -221,13 +281,6 @@ impl Ext2Filesystem {
             let elem = iter.find(|entry| {
                 let filelen = directory.len();
                 unsafe {
-                    /*
-                    let s1 = entry.directory.filename.0.as_ptr() as *const u8;
-                    let s2 = directory.as_bytes().as_ptr() as *const u8;
-                    let slice1 = core::slice::from_raw_parts(s1, 3);
-                    let slice2 = core::slice::from_raw_parts(s2, 3);
-                    info!("{:?} - {:?}; {}", slice1, slice2, filelen);
-                    */
                     libc_memcmp(
                         entry.directory.filename.0.as_ptr() as *const u8,
                         directory.as_bytes().as_ptr() as *const u8,
@@ -259,6 +312,35 @@ impl Ext2Filesystem {
                 let mut iter = self._lookup_directory(ino, path)?;
                 iter.find(|entry| unsafe { entry.directory.get_filename() } == ".")
             }
+        })
+    }
+
+    pub fn _create_file(
+        &mut self,
+        filename: &str,
+        parent_inode_nbr: u32,
+        timestamp: u32,
+        type_perm: TypePerm,
+        (owner, group): (uid_t, gid_t),
+    ) -> LinuxResult<Entry> {
+        let direntry_type = DirectoryEntryType::try_from(type_perm)?;
+        let inode_nbr = self.alloc_inode().ok_or(LinuxError::ENOSPC)?;
+        let (_, inode_addr) = self.get_inode(inode_nbr)?;
+        let mut inode = Inode::new(type_perm);
+
+        inode.set_owner(owner);
+        inode.set_group(group);
+        inode.last_access_time = timestamp;
+        inode.creation_time = timestamp;
+        inode.last_modification_time = timestamp;
+
+        self.disk.borrow_mut().write_struct(inode_addr, &inode)?;
+
+        let mut new_entry = DirectoryEntry::new(filename, direntry_type, inode_nbr)?;
+        self.push_entry(parent_inode_nbr, &mut new_entry)?;
+        Ok(Entry {
+            directory: new_entry,
+            inode,
         })
     }
 
@@ -295,6 +377,41 @@ impl Ext2Filesystem {
             directory: new_entry,
             inode,
         })
+    }
+
+    pub fn create_file(&mut self, ino: u32, path: &str) -> LinuxResult<()> {
+        let timestamp = axhal::time::current_time();
+        let path = Path::new(path);
+        let parent = Path::new(path.parent().unwrap_or("/"));
+        let filename: &str = path.file_name().unwrap();
+        //info!("parent {:?}", parent);
+        let iter = self._lookup_directory(ino, &parent)?;
+        let parent = iter.fold(Ok(None), |res, entry| {
+            if entry.directory.filename == filename.try_into().unwrap() {
+                return Err(LinuxError::EEXIST);
+            }
+            res.map(|opt| {
+                opt.or({
+                    if unsafe { entry.directory.get_filename() == "." } {
+                        Some(entry)
+                    } else {
+                        None
+                    }
+                })
+            })
+        })?;
+
+        //info!("parent: {:?}", parent);
+        let parent_inode_nbr = parent.unwrap().directory.header.inode;
+        self._create_file(
+            filename,
+            parent_inode_nbr,
+            timestamp.as_secs() as u32,
+            (def_mode().bits(), SFlag::S_IFREG).try_into().unwrap(),
+            //def_mode() | Mode::S_IXUSR | Mode::S_IXOTH | Mode::S_IXGRP,
+            (0, 0),
+        )?;
+        Ok(())
     }
 
     pub fn create_dir(&mut self, ino: u32, path: &str) -> LinuxResult<()> {
@@ -357,6 +474,16 @@ impl Ext2Filesystem {
         }
     }
 
+    /// The Truncate() Function Shall cause the regular file named by
+    /// path to have a size which shall be equal to length bytes.
+    pub fn _truncate(&mut self, inode_nbr: u32, new_size: u64) -> LinuxResult<()> {
+        let (mut inode, inode_addr) = self.get_inode(inode_nbr)?;
+        if !inode.is_a_regular_file() {
+            return Err(LinuxError::EISDIR);
+        }
+        self.truncate_inode((&mut inode, inode_addr), new_size)
+    }
+
     pub fn _rmdir(&mut self, parent_inode_nbr: u32, filename: &str) -> LinuxResult<()> {
         let entry = self.find_entry_in_inode(parent_inode_nbr, filename)?;
         let inode_nbr = entry.0.get_inode();
@@ -371,13 +498,21 @@ impl Ext2Filesystem {
     }
 
     fn lookup(&self, ino: u32, path: &str) -> LinuxResult<VfsNodeRef> {
-        info!("lookup: path: {}...", path);
+        info!("lookup: path: {} parent_ino {} ...", path, ino);
         let path = Path::new(path);
         match self._find_entry(ino, &path)? {
             Some(entry) => {
                 let ino = entry.directory.get_inode();
                 info!("lookup: path: {}, ino: {:?}", path, ino);
-                Ok(Arc::new(Ext2Inode::new(entry)))
+                if entry.inode.type_and_perm.is_symlink() {
+                    let lnk = entry.inode.read_symlink().unwrap();
+                    assert!(!lnk.starts_with('/'));
+                    let parent = path.parent().unwrap();
+                    let lnk = format!("{}/{}", parent, lnk);
+                    self.lookup(2, &lnk)
+                } else {
+                    Ok(Arc::new(Ext2Inode::new(entry)))
+                }
             },
             None => {
                 Err(LinuxError::ENOENT)
@@ -1382,7 +1517,9 @@ impl VfsNodeOps for Ext2Inode {
 
         match ty {
             VfsNodeType::File => {
-                unimplemented!();
+                let ino = self.entry.directory.get_inode();
+                let _ = Ext2Fs::get().create_file(ino, path);
+                Ok(())
             }
             VfsNodeType::Dir => {
                 let ino = self.entry.directory.get_inode();
@@ -1419,12 +1556,12 @@ impl VfsNodeOps for Ext2Inode {
         let inode = self.entry.inode;
         let perm = inode.type_and_perm.0 as u32 & !SFlag::S_IFMT.bits();
         let perm = VfsNodePerm::from_bits_truncate(perm as u16);
-        let node_type = if inode.type_and_perm.is_regular() {
-            VfsNodeType::File
-        } else if inode.type_and_perm.is_directory() {
-            VfsNodeType::Dir
-        } else {
-            panic!("unsupport type {}", inode.type_and_perm.0);
+        error!("type: {:#o}", inode.type_and_perm.extract_type());
+        let node_type = match inode.type_and_perm.extract_type() {
+            SFlag::S_IFREG => VfsNodeType::File,
+            SFlag::S_IFDIR => VfsNodeType::Dir,
+            SFlag::S_IFLNK => VfsNodeType::SymLink,
+            _ => panic!("unsupport type {:#x}", inode.type_and_perm.0),
         };
         Ok(VfsNodeAttr::new(perm, node_type, inode.low_size as u64, inode.nbr_disk_sectors as u64))
     }
@@ -1437,8 +1574,18 @@ impl VfsNodeOps for Ext2Inode {
         Ok(ret as usize)
     }
 
-    fn write_at(&self, _offset: u64, _buf: &[u8]) -> VfsResult<usize> {
-        unimplemented!();
+    fn write_at(&self, mut offset: u64, buf: &[u8]) -> VfsResult<usize> {
+        let ino = self.entry.directory.get_inode();
+        let ret = Ext2Fs::get().write_at(ino, &mut offset, buf).unwrap();
+        self.curr_offset.store(offset, Ordering::Relaxed);
+        info!("write_at: ret {} offset {}", ret, offset);
+        Ok(ret as usize)
+    }
+
+    fn truncate(&self, size: u64) -> VfsResult {
+        info!("truncate");
+        let ino = self.entry.directory.get_inode();
+        Ok(Ext2Fs::get().truncate(ino, size)?)
     }
 }
 

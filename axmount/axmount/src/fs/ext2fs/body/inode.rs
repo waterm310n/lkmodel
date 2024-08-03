@@ -205,24 +205,26 @@ impl Inode {
         };
         self.nbr_disk_sectors = block_data as u32;
     }
-    // /// read the fast symlink on the inode if it exist, return None
-    // /// otherwise
-    // pub fn read_symlink(&self) -> Option<&str> {
-    //     unsafe {
-    //         if self.low_size <= Self::FAST_SYMLINK_SIZE_MAX as u32 {
-    //             let slice = std::slice::from_raw_parts(
-    //                 &self.direct_block_pointers as *const Block as *const u8,
-    //                 self.low_size as usize,
-    //             );
-    //             std::str::from_utf8(slice).ok()
-    //         } else {
-    //             None
-    //         }
-    //     }
-    // }
-    // pub fn unlink(&mut self) -> IoResult<()> {
-    //     unimplemented!()
-    // }
+
+    /// read the fast symlink on the inode if it exist, return None
+    /// otherwise
+    pub fn read_symlink(&self) -> Option<&str> {
+        unsafe {
+            if self.low_size <= Self::FAST_SYMLINK_SIZE_MAX as u32 {
+                let slice = core::slice::from_raw_parts(
+                    &self.direct_block_pointers as *const Block as *const u8,
+                    self.low_size as usize,
+                );
+                core::str::from_utf8(slice).ok()
+            } else {
+                None
+            }
+        }
+    }
+
+    //pub fn unlink(&mut self) -> LinuxResult<()> {
+    //  unimplemented!()
+    //}
 }
 
 // Inode flags
