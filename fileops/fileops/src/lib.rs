@@ -7,6 +7,7 @@ extern crate alloc;
 use alloc::string::String;
 use alloc::sync::Arc;
 use alloc::vec;
+use alloc::format;
 
 mod proc_ops;
 
@@ -20,6 +21,7 @@ use mutex::Mutex;
 use axtype::get_user_str;
 use axio::SeekFrom;
 use axfs_vfs::VfsNodeType;
+use axfs_vfs::path::canonicalize;
 
 pub type FileRef = Arc<Mutex<File>>;
 
@@ -100,7 +102,8 @@ fn handle_path(dfd: usize, filename: &str) -> String {
     if dfd == AT_FDCWD {
         let cwd = _getcwd();
         if cwd == "/" {
-            assert!(filename.starts_with("/"));
+            let path = format!("/{}", filename);
+            return canonicalize(&path);
         } else {
             return cwd + filename;
         }

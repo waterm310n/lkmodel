@@ -24,6 +24,7 @@ use mutex::Mutex;
 use crate::fs::ext2fs::body::SFlag;
 use axfs_vfs::VfsNodeAttr;
 use axfs_vfs::VfsNodePerm;
+use axfs_vfs::VfsDirEntry;
 use core::sync::atomic::AtomicU64;
 use core::sync::atomic::Ordering;
 use core::cmp::min;
@@ -1557,7 +1558,7 @@ impl Ext2Inode {
 
 impl VfsNodeOps for Ext2Inode {
     fn create(&self, path: &str, ty: VfsNodeType) -> VfsResult {
-        info!("path: {} {:?}", path, ty);
+        info!("create path: {} {:?}", path, ty);
 
         match ty {
             VfsNodeType::File => {
@@ -1582,18 +1583,15 @@ impl VfsNodeOps for Ext2Inode {
 
     fn lookup(self: Arc<Self>, path: &str) -> VfsResult<VfsNodeRef> {
         let ino = self.entry.directory.get_inode();
+        info!("lookup path: {} ret ino: {}", path, ino);
         Ok(Ext2Fs::get().lookup(ino, path)?)
-        //let inode = Ext2Fs::get().lookup(ino, path).unwrap();
-        //Ok(inode)
     }
 
     fn get_attr(&self) -> VfsResult<VfsNodeAttr> {
-        //let ino = self.entry.directory.get_inode();
-        //info!("get_attr: {} {:#o} {} {}", ino, perm, inode.low_size, inode.nbr_disk_sectors);
+        info!("get_attr ino: {}", self.entry.directory.get_inode());
         let inode = self.entry.inode;
         let perm = inode.type_and_perm.0 as u32 & !SFlag::S_IFMT.bits();
         let perm = VfsNodePerm::from_bits_truncate(perm as u16);
-        error!("type: {:#o}", inode.type_and_perm.extract_type());
         let node_type = match inode.type_and_perm.extract_type() {
             SFlag::S_IFREG => VfsNodeType::File,
             SFlag::S_IFDIR => VfsNodeType::Dir,
@@ -1623,6 +1621,10 @@ impl VfsNodeOps for Ext2Inode {
         info!("truncate");
         let ino = self.entry.directory.get_inode();
         Ok(Ext2Fs::get().truncate(ino, size)?)
+    }
+
+    fn read_dir(&self, _start_idx: usize, _dirents: &mut [VfsDirEntry]) -> VfsResult<usize> {
+        unimplemented!("read_dir");
     }
 }
 
