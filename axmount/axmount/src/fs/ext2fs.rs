@@ -61,8 +61,8 @@ impl Ext2Fs {
         self.inner.lock().create_dir(ino, path)
     }
 
-    pub fn remove_dir(&self, ino: u32, path: &str) -> LinuxResult<()> {
-        self.inner.lock().remove_dir(ino, path)
+    pub fn remove(&self, ino: u32, path: &str) -> LinuxResult<()> {
+        self.inner.lock().remove(ino, path)
     }
 
     pub fn create_file(&self, ino: u32, path: &str) -> LinuxResult<()> {
@@ -408,7 +408,6 @@ impl Ext2Filesystem {
             parent_inode_nbr,
             timestamp.as_secs() as u32,
             (def_mode().bits(), SFlag::S_IFREG).try_into().unwrap(),
-            //def_mode() | Mode::S_IXUSR | Mode::S_IXOTH | Mode::S_IXGRP,
             (0, 0),
         )?;
         Ok(())
@@ -448,6 +447,51 @@ impl Ext2Filesystem {
         Ok(())
     }
 
+    pub fn remove(&mut self, ino: u32, path: &str) -> LinuxResult<()> {
+        let path = Path::new(path);
+        let entry = match self._find_entry(ino, &path)? {
+            Some(entry) => entry,
+            None => {
+                return Err(LinuxError::ENOENT);
+            },
+        };
+        let inode = entry.inode;
+        if inode.type_and_perm.is_regular() {
+            self.remove_file(ino, path.as_str())
+        } else if inode.type_and_perm.is_directory() {
+            self.remove_dir(ino, path.as_str())
+        } else {
+            Err(LinuxError::EINVAL)
+        }
+    }
+
+    pub fn remove_file(&mut self, ino: u32, path: &str) -> LinuxResult<()> {
+        let path = Path::new(path);
+        let parent = path.parent().ok_or_else(|| LinuxError::ENOENT)?;
+        let parent = Path::new(parent);
+
+        let parent = self._find_entry(ino, &parent)?;
+        let parent_inode_nbr = parent.unwrap().directory.header.inode;
+        Ok(self._unlink(
+            parent_inode_nbr,
+            path.file_name().unwrap(),
+            true,
+        )?)
+    }
+
+    /// The unlink() function shall remove a link to a file.
+    pub fn _unlink(
+        &mut self,
+        parent_inode_nbr: u32,
+        filename: &str,
+        free_inode_data: bool,
+    ) -> LinuxResult<()> {
+        let entry = self.find_entry_in_inode(parent_inode_nbr, filename)?;
+        self.unlink_inode(entry.0.get_inode(), free_inode_data)?;
+        self.delete_entry(parent_inode_nbr, entry.1).expect("WTF");
+        Ok(())
+    }
+
     pub fn remove_dir(&mut self, ino: u32, path: &str) -> LinuxResult<()> {
         let path = Path::new(path);
         let iter = self._lookup_directory(ino, &path)?;
@@ -465,6 +509,7 @@ impl Ext2Filesystem {
                 })
             })
         })?;
+        info!("remove_dir ...");
         match path.file_name() {
             Some(filename) => Ok(self._rmdir(
                 parent.unwrap().directory.get_inode(),
@@ -591,10 +636,10 @@ impl Ext2Filesystem {
         Ok(())
     }
 
-    /*
     /// decrement link count of the inode and delete it if it becomes 0
     /// panic if the inode refers to a directory
     fn unlink_inode(&mut self, inode_nbr: u32, free_inode_data: bool) -> LinuxResult<()> {
+        info!("unlink_inode");
         let (mut inode, inode_addr) = self.get_inode(inode_nbr)?;
         if inode.is_a_directory() {
             return Err(LinuxError::EISDIR);
@@ -606,7 +651,6 @@ impl Ext2Filesystem {
         self.disk.borrow_mut().write_struct(inode_addr, &inode)?;
         Ok(())
     }
-    */
 
     /// delete the entry at entry_off of the parent_inode nbr
     fn delete_entry(&mut self, parent_inode_nbr: u32, entry_off: u32) -> LinuxResult<()> {
@@ -1531,16 +1575,9 @@ impl VfsNodeOps for Ext2Inode {
     }
 
     fn remove(&self, path: &str) -> VfsResult {
-        let inode = self.entry.inode;
-        if inode.type_and_perm.is_regular() {
-            unimplemented!();
-        } else if  inode.type_and_perm.is_directory() {
-            let ino = self.entry.directory.get_inode();
-            let _ = Ext2Fs::get().remove_dir(ino, path);
-            Ok(())
-        } else {
-            Err(VfsError::Unsupported)
-        }
+        info!("remove at ext2: {}", path);
+        let ino = self.entry.directory.get_inode();
+        Ok(Ext2Fs::get().remove(ino, path)?)
     }
 
     fn lookup(self: Arc<Self>, path: &str) -> VfsResult<VfsNodeRef> {

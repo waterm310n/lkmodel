@@ -28,6 +28,10 @@ impl Path {
     pub fn file_name(&self) -> Option<&str> {
         self.components().next_back()
     }
+
+    pub fn as_str(&self) -> &str {
+        &self.inner
+    }
 }
 
 impl Display for Path {
