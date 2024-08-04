@@ -57,7 +57,7 @@ pub fn openat(dfd: usize, filename: &str, flags: usize, mode: usize) -> AxResult
     let fs = current.fs.lock();
 
     let path = handle_path(dfd, filename);
-    debug!("openat path {}", path);
+    info!("openat path {}", path);
     File::open(&path, &opts, &fs).or_else(|e| {
         if e == NotFound {
             // Handle special filesystem, e.g., procfs, sysfs ..
@@ -509,6 +509,22 @@ pub fn fcntl(fd: usize, cmd: usize, udata: usize) -> usize {
     //unimplemented!("fcntl: fd {}-{} cmd {} udata {}", fd, new_fd, cmd, udata);
     info!("fcntl: fd {}-{} cmd {} udata {}", fd, new_fd, cmd, udata);
     new_fd
+}
+
+pub fn getdents64(fd: usize, dirp: usize, count: usize) -> usize {
+    info!("getdents64 fd {}...", fd);
+    let current = task::current();
+    let file = current.filetable.lock().get_file(fd).unwrap();
+    let mut locked_file = file.lock();
+
+    let mut kbuf = vec![0u8; count];
+    let ret = locked_file.read(&mut kbuf[..]).unwrap();
+
+    let ubuf: &mut [u8] = unsafe {
+        core::slice::from_raw_parts_mut(dirp as *mut _, count)
+    };
+    ubuf.copy_from_slice(&kbuf);
+    ret
 }
 
 pub fn init(cpu_id: usize, dtb_pa: usize) {

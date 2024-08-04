@@ -9,6 +9,7 @@ use core::mem::MaybeUninit;
 use alloc::vec;
 use alloc::vec::Vec;
 use alloc::sync::Arc;
+use alloc::string::String;
 use alloc::format;
 use tools::{align_next, err_if_zero, u32_align_next, Block};
 use header::{BlockGroupDescriptor, SuperBlock};
@@ -28,6 +29,13 @@ use axfs_vfs::VfsDirEntry;
 use core::sync::atomic::AtomicU64;
 use core::sync::atomic::Ordering;
 use core::cmp::min;
+use core::mem::transmute;
+use core::mem;
+use core::ptr::copy_nonoverlapping;
+use body::directory_entry::DirectoryEntryType::{
+    RegularFile, Directory,
+    CharacterDevice, BlockDevice, Fifo, Socket, SymbolicLink
+};
 
 pub use body::{DirectoryEntry, DirectoryEntryType, Entry, Inode, TypePerm};
 
@@ -37,6 +45,27 @@ pub use tools::div_rounded_up;
 const EXT2_SIGNATURE_MAGIC: u16 = 0xef53;
 
 static EXT2_FS: LazyInit<Arc<Ext2Fs>> = LazyInit::new();
+
+enum DT_ {
+    UNKNOWN = 0,
+    FIFO = 1,
+    CHR = 2,
+    DIR = 4,
+    BLK = 6,
+    REG = 8,
+    LNK = 10,
+    SOCK = 12,
+    WHT = 14,
+}
+
+#[repr(C, packed)]
+struct LinuxDirent64 {
+    d_ino:      u64,    // 64-bit inode number
+    d_off:      i64,    // 64-bit offset to next structure
+    d_reclen:   u16,    // Size of this dirent
+    d_type:     u8,     // File type
+    d_name:     [u8; 0],// Filename (null-terminated)
+}
 
 pub struct Ext2Fs {
     inner: Mutex<Ext2Filesystem>,
@@ -72,6 +101,10 @@ impl Ext2Fs {
 
     pub fn lookup(self: Arc<Self>, ino: u32, path: &str) -> LinuxResult<VfsNodeRef> {
         self.inner.lock().lookup(ino, path)
+    }
+
+    pub fn read_dir(&self, ino: u32, offset: u64, buf: &mut [u8]) -> LinuxResult<u64> {
+        self.inner.lock()._read_dir(ino, offset, buf)
     }
 
     pub fn read_at(&self, ino: u32, offset: &mut u64, buf: &mut [u8]) -> LinuxResult<u64> {
@@ -149,6 +182,60 @@ impl Ext2Filesystem {
             disk: RefCell::new(disk),
             cache: Cache::new(block_size as usize / size_of::<Block>()),
         })
+    }
+
+    pub fn _read_dir(&self, ino: u32, offset: u64, buf: &mut [u8]) -> LinuxResult<u64> {
+        if offset != 0 {
+            error!("NOTICE! todo: check offset[{}] and real length of directory!", offset);
+            return Ok(0);
+        }
+
+        let iter = self.lookup_directory(ino)?;
+
+        let mut count = 0;
+        for (i, entry) in iter.enumerate() {
+            let name = unsafe { entry.directory.get_filename() };
+            let mut name = String::from(name);
+            name.push('\0');
+            let name_len = name.len();
+            info!("[{}] name:{:?} [{}] {}", i, name.as_bytes(), name_len, name.len());
+
+            let entry_size = mem::size_of::<LinuxDirent64>() + name_len ;
+            info!("entry_size : {}", entry_size);
+
+            if count + entry_size > buf.len() {
+                error!("buf for dirents overflow!");
+                return Ok(count as u64);
+            }
+
+            let dirent: &mut LinuxDirent64 = unsafe {
+                transmute(buf.as_mut_ptr().offset(count as isize))
+            };
+            dirent.d_ino = entry.directory.header.inode as u64;
+            dirent.d_off = (count + entry_size) as i64;
+            dirent.d_reclen = entry_size as u16;
+            dirent.d_type = match entry.directory.header.type_indicator {
+                RegularFile => DT_::REG as u8,
+                Directory => DT_::DIR as u8,
+                CharacterDevice => DT_::CHR as u8,
+                BlockDevice => DT_::BLK as u8,
+                Fifo => DT_::FIFO as u8,
+                Socket => DT_::SOCK as u8,
+                SymbolicLink => DT_::LNK as u8,
+            };
+
+            unsafe {
+                copy_nonoverlapping(
+                    //entry.directory.filename.0.as_ptr(),
+                    name.as_ptr(),
+                    dirent.d_name.as_mut_ptr(),
+                    name_len
+                )
+            };
+
+            count += entry_size;
+        }
+        Ok(count as u64)
     }
 
     pub fn _read_at(&mut self, inode_nbr: u32, file_offset: &mut u64, mut buf: &mut [u8]) -> LinuxResult<u64> {
@@ -301,18 +388,32 @@ impl Ext2Filesystem {
     }
 
     fn _find_entry(&self, ino: u32, path: &Path) -> LinuxResult<Option<Entry>> {
-        info!("parent: ino: {}, {:?}", ino, path.parent());
+        info!("_find_entry: parent: ino: {}, {:?}", ino, path.parent());
         Ok(match path.parent() {
             Some(parent) => {
                 let parent = Path::new(parent);
                 let mut iter = self._lookup_directory(ino, &parent)?;
                 iter.find(|entry| unsafe { entry.directory.get_filename() } == path.file_name().unwrap())
             }
-            // rootdir
             None => {
+                info!("is rootdir: ino {} {}", ino, path.as_str());
+                if path.as_str() == "" {
+                    let mut iter = self._lookup_directory(ino, path)?;
+                    iter.find(|entry| unsafe { entry.directory.get_filename() } == ".")
+                } else {
+                    let parent = Path::new("/");
+                    let mut iter = self._lookup_directory(ino, &parent)?;
+                    iter.find(|entry| unsafe { entry.directory.get_filename() } == path.file_name().unwrap())
+                }
+            }
+            // rootdir
+            /*
+            None => {
+                info!("is rootdir: ino {} {}", ino, path.as_str());
                 let mut iter = self._lookup_directory(ino, path)?;
                 iter.find(|entry| unsafe { entry.directory.get_filename() } == ".")
             }
+            */
         })
     }
 
@@ -388,7 +489,7 @@ impl Ext2Filesystem {
         //info!("parent {:?}", parent);
         let iter = self._lookup_directory(ino, &parent)?;
         let parent = iter.fold(Ok(None), |res, entry| {
-            if entry.directory.filename == filename.try_into().unwrap() {
+            if unsafe { entry.directory.get_filename() } == filename {
                 return Err(LinuxError::EEXIST);
             }
             res.map(|opt| {
@@ -422,7 +523,7 @@ impl Ext2Filesystem {
         //info!("parent {:?}", parent);
         let iter = self._lookup_directory(ino, &parent)?;
         let parent = iter.fold(Ok(None), |res, entry| {
-            if entry.directory.filename == filename.try_into().unwrap() {
+            if unsafe { entry.directory.get_filename() } == filename {
                 return Err(LinuxError::EEXIST);
             }
             res.map(|opt| {
@@ -436,7 +537,7 @@ impl Ext2Filesystem {
             })
         })?;
 
-        //info!("parent: {:?}", parent);
+        info!("path {}", path.as_str());
         let parent_inode_nbr = parent.unwrap().directory.header.inode;
         self._create_dir(
             parent_inode_nbr,
@@ -544,23 +645,25 @@ impl Ext2Filesystem {
     }
 
     fn lookup(&self, ino: u32, path: &str) -> LinuxResult<VfsNodeRef> {
-        info!("lookup: path: {} parent_ino {} ...", path, ino);
+        info!("ext2: lookup: path: {} parent_ino {} ...", path, ino);
         let path = Path::new(path);
         match self._find_entry(ino, &path)? {
             Some(entry) => {
                 let ino = entry.directory.get_inode();
-                info!("lookup: path: {}, ino: {:?}", path, ino);
+                info!("ext2: lookup: child path: {}, ino: {:?}", path, ino);
                 if entry.inode.type_and_perm.is_symlink() {
                     let lnk = entry.inode.read_symlink().unwrap();
                     assert!(!lnk.starts_with('/'));
-                    let parent = path.parent().unwrap();
+                    let parent = path.parent().unwrap_or("");
                     let lnk = format!("{}/{}", parent, lnk);
+                    info!("lnk: {}", lnk);
                     self.lookup(2, &lnk)
                 } else {
                     Ok(Arc::new(Ext2Inode::new(entry)))
                 }
             },
             None => {
+                info!("ext2: lookup: NOENT");
                 Err(LinuxError::ENOENT)
             },
         }
@@ -1583,7 +1686,7 @@ impl VfsNodeOps for Ext2Inode {
 
     fn lookup(self: Arc<Self>, path: &str) -> VfsResult<VfsNodeRef> {
         let ino = self.entry.directory.get_inode();
-        info!("lookup path: {} ret ino: {}", path, ino);
+        info!("VfsNode: lookup path: {} ret ino: {}", path, ino);
         Ok(Ext2Fs::get().lookup(ino, path)?)
     }
 
@@ -1603,10 +1706,14 @@ impl VfsNodeOps for Ext2Inode {
 
     fn read_at(&self, mut offset: u64, buf: &mut [u8]) -> VfsResult<usize> {
         let ino = self.entry.directory.get_inode();
-        let ret = Ext2Fs::get().read_at(ino, &mut offset, buf).unwrap();
-        self.curr_offset.store(offset, Ordering::Relaxed);
-        info!("read_at: ret {} offset {}", ret, offset);
-        Ok(ret as usize)
+        if self.entry.inode.type_and_perm.is_directory() {
+            Ok(Ext2Fs::get().read_dir(ino, offset, buf).unwrap() as usize)
+        } else {
+            let ret = Ext2Fs::get().read_at(ino, &mut offset, buf).unwrap();
+            self.curr_offset.store(offset, Ordering::Relaxed);
+            info!("read_at[file]: ret {} offset {}", ret, offset);
+            Ok(ret as usize)
+        }
     }
 
     fn write_at(&self, mut offset: u64, buf: &[u8]) -> VfsResult<usize> {
@@ -1621,10 +1728,6 @@ impl VfsNodeOps for Ext2Inode {
         info!("truncate");
         let ino = self.entry.directory.get_inode();
         Ok(Ext2Fs::get().truncate(ino, size)?)
-    }
-
-    fn read_dir(&self, _start_idx: usize, _dirents: &mut [VfsDirEntry]) -> VfsResult<usize> {
-        unimplemented!("read_dir");
     }
 }
 

@@ -5,9 +5,11 @@
 #[macro_export]
 macro_rules! impl_vfs_dir_default {
     () => {
+        /*
         fn read_at(&self, _offset: u64, _buf: &mut [u8]) -> $crate::VfsResult<usize> {
             $crate::__priv::ax_err!(IsADirectory)
         }
+        */
 
         fn write_at(&self, _offset: u64, _buf: &[u8]) -> $crate::VfsResult<usize> {
             $crate::__priv::ax_err!(IsADirectory)

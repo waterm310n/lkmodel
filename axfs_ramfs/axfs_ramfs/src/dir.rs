@@ -165,6 +165,11 @@ impl VfsNodeOps for DirNode {
         }
     }
 
+    fn read_at(&self, _offset: u64, _buf: &mut [u8]) -> VfsResult<usize> {
+        // Todo: implement it with read_dir
+        Ok(0)
+    }
+
     axfs_vfs::impl_vfs_dir_default! {}
 }
 

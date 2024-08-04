@@ -187,9 +187,8 @@ fn linux_syscall_pread64(args: SyscallArgs) -> usize {
 
 #[cfg(target_arch = "riscv64")]
 fn linux_syscall_getdents64(args: SyscallArgs) -> usize {
-    let [fd, _dirp, count, ..] = args;
-    warn!("impl linux_syscall_getdents64 fd {}, count {}", fd, count);
-    0
+    let [fd, dirp, count, ..] = args;
+    fileops::getdents64(fd, dirp, count)
 }
 
 fn linux_syscall_write(args: SyscallArgs) -> usize {

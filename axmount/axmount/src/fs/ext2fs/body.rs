@@ -2,7 +2,7 @@
 
 mod inode;
 mod typeperm;
-mod directory_entry;
+pub mod directory_entry;
 
 pub use inode::{Inode, gid_t, uid_t};
 pub use typeperm::{TypePerm, Mode, SFlag};
