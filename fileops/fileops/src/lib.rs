@@ -22,6 +22,7 @@ use axtype::get_user_str;
 use axio::SeekFrom;
 use axfs_vfs::VfsNodeType;
 use axfs_vfs::path::canonicalize;
+use axfile::fops::O_CREAT;
 
 pub type FileRef = Arc<Mutex<File>>;
 
@@ -34,8 +35,6 @@ const SEEK_SET: usize = 0;
 const SEEK_CUR: usize = 1;
 const SEEK_END: usize = 2;
 
-const O_CREAT: usize = 0o100;
-
 // dup
 const F_DUPFD: usize = 0;
 
@@ -46,8 +45,9 @@ pub fn openat(dfd: usize, filename: &str, flags: usize, mode: usize) -> AxResult
     );
 
     let mut opts = OpenOptions::new();
+    opts.set_flags(flags as i32);
     opts.read(true);
-    if (flags & O_CREAT) != 0 {
+    if (flags as i32 & O_CREAT) != 0 {
         opts.write(true);
         opts.create(true);
         opts.truncate(true);

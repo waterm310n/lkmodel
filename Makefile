@@ -226,7 +226,7 @@ else
 endif
 
 linux_apps:
-	@make -C payload
+	@make -C btp
 
 install_apps:
 ifeq ($(wildcard $(DISK_IMG)),)

@@ -23,6 +23,9 @@ pub type FileAttr = axfs_vfs::VfsNodeAttr;
 /// Alias of [`axfs_vfs::VfsNodePerm`].
 pub type FilePerm = axfs_vfs::VfsNodePerm;
 
+pub const O_CREAT:      i32 = 0o100;
+pub const O_DIRECTORY:  i32 = 0o200000; /* must be a directory */
+
 static NEXT_INO: AtomicUsize = AtomicUsize::new(0);
 
 pub fn alloc_ino() -> usize {
@@ -75,6 +78,9 @@ impl OpenOptions {
             _custom_flags: 0,
             _mode: 0o666,
         }
+    }
+    pub fn set_flags(&mut self, flags: i32) {
+        self._custom_flags = flags;
     }
     /// Sets the option for read access.
     pub fn read(&mut self, read: bool) {
@@ -223,6 +229,11 @@ impl File {
         };
 
         let attr = node.get_attr()?;
+        if (opts._custom_flags & O_DIRECTORY) != 0 {
+            if !attr.is_dir() {
+                return ax_err!(NotADirectory);
+            }
+        }
         if attr.is_dir()
             && (opts.create || opts.create_new || opts.write || opts.append || opts.truncate)
         {
