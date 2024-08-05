@@ -25,7 +25,6 @@ use mutex::Mutex;
 use crate::fs::ext2fs::body::SFlag;
 use axfs_vfs::VfsNodeAttr;
 use axfs_vfs::VfsNodePerm;
-use axfs_vfs::VfsDirEntry;
 use core::sync::atomic::AtomicU64;
 use core::sync::atomic::Ordering;
 use core::cmp::min;
@@ -47,6 +46,7 @@ const EXT2_SIGNATURE_MAGIC: u16 = 0xef53;
 static EXT2_FS: LazyInit<Arc<Ext2Fs>> = LazyInit::new();
 
 enum DT_ {
+    #[allow(dead_code)]
     UNKNOWN = 0,
     FIFO = 1,
     CHR = 2,
@@ -55,6 +55,7 @@ enum DT_ {
     REG = 8,
     LNK = 10,
     SOCK = 12,
+    #[allow(dead_code)]
     WHT = 14,
 }
 
@@ -628,7 +629,15 @@ impl Ext2Filesystem {
         if !inode.is_a_regular_file() {
             return Err(LinuxError::EISDIR);
         }
-        self.truncate_inode((&mut inode, inode_addr), new_size)
+
+        let mut size = inode.get_size();
+        if new_size <= size {
+            self.truncate_inode((&mut inode, inode_addr), new_size)
+        } else {
+            let buf = vec![0u8; (new_size - size) as usize];
+            let _ = self._write_at(inode_nbr, &mut size, &buf)?;
+            Ok(())
+        }
     }
 
     pub fn _rmdir(&mut self, parent_inode_nbr: u32, filename: &str) -> LinuxResult<()> {
