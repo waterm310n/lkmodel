@@ -1,12 +1,10 @@
 #include <stdio.h>
+#include <ctype.h>
 #include <stdlib.h>
 #include <dirent.h>
-#include <unistd.h>
-#include <sys/stat.h>
-#include <sys/types.h>
-#include <sys/wait.h>
 #include <string.h>
-#include <stdbool.h>
+#include <unistd.h>
+#include <sys/wait.h>
 
 #define LINE_SIZE 1024
 #define MAX_ARG_COUNT 9
@@ -30,13 +28,26 @@ int exec_cmd(char *cmdline)
     pid = vfork();
     if (pid == 0) {
         char exe_path[256];
-        sprintf(exe_path, "%s/%s", SBIN_PATH, argv[0]);
+        if (argv[0][0] == '/') {
+            strcpy(exe_path, argv[0]);
+        } else {
+            sprintf(exe_path, "%s/%s", SBIN_PATH, argv[0]);
+        }
         execv(exe_path, argv);
         exit(0);
     }
     waitpid(pid, NULL, 0);
 
     return 0;
+}
+
+char *ltrim(char *str)
+{
+    int start = 0;
+    while (isspace(start)) {
+        start++;
+    }
+    return str + start;
 }
 
 int run_one_script(const char *path, const char *name)
@@ -58,10 +69,14 @@ int run_one_script(const char *path, const char *name)
         if (p != NULL) {
             *p = '\0';
         }
-        if (strlen(line) == 0) {
+        p = ltrim(line);
+        if (strlen(p) == 0) {
             break;
         }
-        if (exec_cmd(line) < 0) {
+        if (p[0] == '#') {
+            continue;
+        }
+        if (exec_cmd(p) < 0) {
             fprintf(stderr, "exec script err");
         }
     }
