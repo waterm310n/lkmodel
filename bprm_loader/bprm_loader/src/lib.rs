@@ -378,9 +378,7 @@ fn load_elf_phdrs(file: FileRef) -> LinuxResult<(Vec<ProgramHeader>, usize, usiz
     let size = entsize.checked_mul(phnum).unwrap();
     assert!(size > 0 && size <= PAGE_SIZE);
     let phoff = ehdr.e_phoff;
-    //let mut buf: [u8; PAGE_SIZE] = [0; PAGE_SIZE];
-    let mut buf: [u8; 2 * 1024] = [0; 2 * 1024];
-    info!("phoff: {:#X}", ehdr.e_phoff);
+    let mut buf = alloc::vec![0u8; size];
     let _ = file.seek(SeekFrom::Start(phoff));
     file.read(&mut buf)?;
     let phdrs = SegmentTable::new(ehdr.endianness, ehdr.class, &buf[..]);

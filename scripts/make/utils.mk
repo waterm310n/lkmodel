@@ -18,7 +18,14 @@ define make_disk_image_fat32
   @mkfs.fat -F 32 $(1)
 endef
 
+define make_disk_image_ext2
+  @printf "    $(GREEN_C)Creating$(END_C) EXT2 disk image \"$(1)\" ...\n"
+  @dd if=/dev/zero of=$(1) bs=1M count=256
+  @mkfs.ext2 $(1)
+endef
+
 define make_disk_image
+  $(if $(filter $(1),ext2), $(call make_disk_image_ext2,$(2)))
   $(if $(filter $(1),fat32), $(call make_disk_image_fat32,$(2)))
 endef
 
@@ -42,8 +49,8 @@ define riscv64_install_apps
   @mkdir -p ./mnt
   @sudo mount $(1) ./mnt
 
-  @sudo mkdir -p ./mnt/sbin
-  @sudo mkdir -p ./mnt/bin
+  @sudo cp -rf ../busybox/output_riscv64/* ./mnt/
+
   @sudo mkdir -p ./mnt/lib
   @sudo mkdir -p ./mnt/tmp
   @sudo mkdir -p ./mnt/proc
@@ -51,12 +58,12 @@ define riscv64_install_apps
   @sudo mkdir -p ./mnt/opt
   @sudo mkdir -p ./mnt/btp
 
-  @sudo cp -rf ../busybox/output_riscv64/bin/busybox ./mnt/bin/ls
-
   @sudo cp -r ./btp/build/riscv64/sbin/ ./mnt/btp/
   @sudo cp ./btp/syscalls ./mnt/opt/
+  @sudo cp ./btp/btp_tests ./mnt/opt/
   @sudo cp ../dash/src/dash ./mnt/btp/sbin/
 
+  @sudo rm -f ./mnt/sbin/init
   @sudo cp ./mnt/btp/sbin/init ./mnt/sbin/init
 
   @sudo cp /usr/riscv64-linux-gnu/lib/ld-linux-riscv64-lp64d.so.1 ./mnt/lib/

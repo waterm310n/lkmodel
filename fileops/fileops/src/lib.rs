@@ -7,6 +7,7 @@ extern crate alloc;
 use alloc::string::String;
 use alloc::sync::Arc;
 use alloc::vec;
+use alloc::format;
 
 mod proc_ops;
 
@@ -20,6 +21,8 @@ use mutex::Mutex;
 use axtype::get_user_str;
 use axio::SeekFrom;
 use axfs_vfs::VfsNodeType;
+use axfs_vfs::path::canonicalize;
+use axfile::fops::O_CREAT;
 
 pub type FileRef = Arc<Mutex<File>>;
 
@@ -32,8 +35,6 @@ const SEEK_SET: usize = 0;
 const SEEK_CUR: usize = 1;
 const SEEK_END: usize = 2;
 
-const O_CREAT: usize = 0o100;
-
 // dup
 const F_DUPFD: usize = 0;
 
@@ -44,8 +45,9 @@ pub fn openat(dfd: usize, filename: &str, flags: usize, mode: usize) -> AxResult
     );
 
     let mut opts = OpenOptions::new();
+    opts.set_flags(flags as i32);
     opts.read(true);
-    if (flags & O_CREAT) != 0 {
+    if (flags as i32 & O_CREAT) != 0 {
         opts.write(true);
         opts.create(true);
         opts.truncate(true);
@@ -55,7 +57,7 @@ pub fn openat(dfd: usize, filename: &str, flags: usize, mode: usize) -> AxResult
     let fs = current.fs.lock();
 
     let path = handle_path(dfd, filename);
-    debug!("openat path {}", path);
+    info!("openat path {}", path);
     File::open(&path, &opts, &fs).or_else(|e| {
         if e == NotFound {
             // Handle special filesystem, e.g., procfs, sysfs ..
@@ -100,7 +102,8 @@ fn handle_path(dfd: usize, filename: &str) -> String {
     if dfd == AT_FDCWD {
         let cwd = _getcwd();
         if cwd == "/" {
-            assert!(filename.starts_with("/"));
+            let path = format!("/{}", filename);
+            return canonicalize(&path);
         } else {
             return cwd + filename;
         }
@@ -506,6 +509,22 @@ pub fn fcntl(fd: usize, cmd: usize, udata: usize) -> usize {
     //unimplemented!("fcntl: fd {}-{} cmd {} udata {}", fd, new_fd, cmd, udata);
     info!("fcntl: fd {}-{} cmd {} udata {}", fd, new_fd, cmd, udata);
     new_fd
+}
+
+pub fn getdents64(fd: usize, dirp: usize, count: usize) -> usize {
+    info!("getdents64 fd {}...", fd);
+    let current = task::current();
+    let file = current.filetable.lock().get_file(fd).unwrap();
+    let mut locked_file = file.lock();
+
+    let mut kbuf = vec![0u8; count];
+    let ret = locked_file.read(&mut kbuf[..]).unwrap();
+
+    let ubuf: &mut [u8] = unsafe {
+        core::slice::from_raw_parts_mut(dirp as *mut _, count)
+    };
+    ubuf.copy_from_slice(&kbuf);
+    ret
 }
 
 pub fn init(cpu_id: usize, dtb_pa: usize) {
