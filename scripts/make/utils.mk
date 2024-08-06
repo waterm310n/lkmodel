@@ -58,6 +58,7 @@ define riscv64_install_apps
   @sudo mkdir -p ./mnt/opt
   @sudo mkdir -p ./mnt/btp
 
+  @sudo cp -r ./btp/etc ./mnt/
   @sudo cp -r ./btp/build/riscv64/sbin/ ./mnt/btp/
   @sudo cp ./btp/syscalls ./mnt/opt/
   @sudo cp ./btp/btp_tests ./mnt/opt/
@@ -79,6 +80,7 @@ define riscv64_install_apps
   ls -l ./mnt/testcases
   ls -l ./mnt/opt
   ls -l ./mnt/btp/sbin
+  ls -l ./mnt/etc
   @sudo umount ./mnt
   @rm -rf mnt
 endef

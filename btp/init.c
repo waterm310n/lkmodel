@@ -1,26 +1,98 @@
 #include <stdio.h>
 #include <stdlib.h>
+#include <dirent.h>
+#include <unistd.h>
+#include <sys/stat.h>
+#include <sys/types.h>
+#include <sys/wait.h>
+#include <string.h>
+#include <stdbool.h>
 
-unsigned long ax_sqrt(unsigned long n)
+#define LINE_SIZE 1024
+#define MAX_ARG_COUNT 9
+#define SBIN_PATH "/btp/sbin"
+
+int exec_cmd(char *cmdline)
 {
-    unsigned long x = n;
-    while (1) {
-        if (x * x <= n && (x + 1) * (x + 1) > n) {
-            return x;
-        }
-        x = (x + n / x) / 2;
+    pid_t pid;
+    char *token;
+    char *argv[MAX_ARG_COUNT + 1]; // argv with end 'NULL'
+    int argc = 0;
+
+    printf("cmd: %s\n", cmdline);
+    token = strtok(cmdline, " \t"); // split by 'space' and 'tab'
+    while (token != NULL && argc < MAX_ARG_COUNT) {
+        argv[argc++] = token;
+        token = strtok(NULL, " \t");
     }
+    argv[argc] = NULL;
+
+    pid = vfork();
+    if (pid == 0) {
+        char exe_path[256];
+        sprintf(exe_path, "%s/%s", SBIN_PATH, argv[0]);
+        execv(exe_path, argv);
+        exit(0);
+    }
+    waitpid(pid, NULL, 0);
+
+    return 0;
 }
 
-int main()
+int run_one_script(const char *path, const char *name)
 {
-    int i;
-    int seed;
-    for (i = 0; i < 1000000; i++) {
-        // Only for consuming time.
-        seed += ax_sqrt(1048577+i);
+    FILE *fp;
+    char script[256];
+    char line[LINE_SIZE];
+
+    sprintf(script, "%s/%s", path, name);
+    printf("script: %s\n", script);
+    fp = fopen(script, "r");
+    if (fp == NULL) {
+        fprintf(stderr, "open script err");
+        return -1;
     }
-    unsigned long ret = ax_sqrt(seed);
-    printf("[userland]: Hello, Init! Sqrt(1048577) = %lu \n", ret);
+
+    while (fgets(line, LINE_SIZE, fp) != NULL) {
+        char *p = strchr(line, '\n');
+        if (p != NULL) {
+            *p = '\0';
+        }
+        if (strlen(line) == 0) {
+            break;
+        }
+        if (exec_cmd(line) < 0) {
+            fprintf(stderr, "exec script err");
+        }
+    }
+
+    fclose(fp);
+    return 0;
+}
+
+void run_scripts(const char *path)
+{
+    DIR *dir;
+    struct dirent *entry;
+
+    if ((dir = opendir(path)) == NULL) {
+        fprintf(stderr, "bad dir path %s", path);
+        exit(-1);
+    }
+    while ((entry = readdir(dir)) != NULL) {
+        if (strcmp(entry->d_name, ".") == 0 || strcmp(entry->d_name, "..") == 0)
+            continue;
+
+        if (run_one_script(path, entry->d_name) != 0) {
+            fprintf(stderr, "run script %s/%s error", path, entry->d_name);
+        }
+    }
+    closedir(dir);
+}
+
+int main(int argc, char *argv[])
+{
+    printf("[initd] startup ..\n");
+    run_scripts("/etc/init.d");
     return 0;
 }

@@ -511,6 +511,19 @@ pub fn fcntl(fd: usize, cmd: usize, udata: usize) -> usize {
     new_fd
 }
 
+pub fn dup(fd: usize) -> usize {
+    if fd <= 2 {
+        unimplemented!("impl chardev file!");
+    }
+    info!("dup [{:#x}] ...", fd);
+    let cur = task::current();
+    let mut locked_fdt = cur.filetable.lock();
+    let new_fd = locked_fdt.alloc_fd(fd);
+    let file = locked_fdt.get_file(fd).unwrap();
+    locked_fdt.fd_install(new_fd, file.clone());
+    new_fd
+}
+
 pub fn getdents64(fd: usize, dirp: usize, count: usize) -> usize {
     info!("getdents64 fd {}...", fd);
     let current = task::current();

@@ -3,6 +3,7 @@
 ///
 
 pub const LINUX_SYSCALL_GETCWD: usize = 0x11;
+pub const LINUX_SYSCALL_DUP: usize = 0x17;
 pub const LINUX_SYSCALL_FCNTL: usize = 0x19;
 pub const LINUX_SYSCALL_IOCTL: usize = 0x1d;
 pub const LINUX_SYSCALL_MKDIRAT: usize = 0x22;
