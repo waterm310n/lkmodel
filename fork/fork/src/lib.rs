@@ -158,14 +158,7 @@ impl KernelCloneArgs {
         } else {
             let current = task::current();
             let src_files = current.filetable.lock();
-            task.filetable.lock().reserve(src_files.slots_len(), src_files.table.num_occupied);
-            for i in 0..src_files.slots_len() {
-                let f = src_files.get_file(i);
-                if let Some(item) = f {
-                    task.filetable.lock().fd_install(i, item.clone());
-                }
-            }
-            info!("copy_files COPY! slots {}", src_files.slots_len());
+            task.filetable.lock().copy_from(&src_files);
             Ok(())
         }
     }

@@ -119,15 +119,13 @@ fn handle_path(dfd: usize, filename: &str) -> String {
 
 pub fn read(fd: usize, ubuf: &mut [u8]) -> usize {
     info!("read ... fd {}", fd);
-    if fd == 0 {
-        return read_from_stdio(ubuf);
-    }
 
     let count = ubuf.len();
     let current = task::current();
     let file = current.filetable.lock().get_file(fd).unwrap();
 
     let mut kbuf = vec![0u8; count];
+    /*
     let mut pos = 0;
     while pos < count {
         let ret = file.lock().read(&mut kbuf[pos..]).unwrap();
@@ -136,6 +134,8 @@ pub fn read(fd: usize, ubuf: &mut [u8]) -> usize {
         }
         pos += ret;
     }
+    */
+    let pos = file.lock().read(&mut kbuf).unwrap();
 
     info!(
         "linux_syscall_read: fd {}, count {}, ret {}",
@@ -154,10 +154,6 @@ pub fn pread64(fd: usize, ubuf: &mut [u8], offset: usize) -> usize {
 }
 
 pub fn write(fd: usize, ubuf: &[u8]) -> usize {
-    if fd == 1 || fd == 2 {
-        return write_to_stdio(ubuf);
-    }
-
     let count = ubuf.len();
     let current = task::current();
     let file = current.filetable.lock().get_file(fd).unwrap();
@@ -165,6 +161,7 @@ pub fn write(fd: usize, ubuf: &[u8]) -> usize {
     let mut kbuf = vec![0u8; count];
     kbuf.copy_from_slice(ubuf);
 
+    /*
     let mut pos = 0;
     while pos < count {
         let ret = file.lock().write(&kbuf[pos..]).unwrap();
@@ -173,34 +170,10 @@ pub fn write(fd: usize, ubuf: &[u8]) -> usize {
         }
         pos += ret;
     }
+    */
+    let pos = file.lock().write(&kbuf).unwrap();
     info!("write: fd {}, count {}, ret {}", fd, count, pos);
     pos
-}
-
-fn write_to_stdio(ubuf: &[u8]) -> usize {
-    axhal::console::write_bytes(ubuf);
-    ubuf.len()
-}
-
-fn read_from_stdio(ubuf: &mut [u8]) -> usize {
-    assert!(ubuf.len() > 0);
-
-    // try until we got something
-    let mut index = 0;
-    while index < ubuf.len() {
-        if let Some(c) = axhal::console::getchar() {
-            let c = if c == b'\r' { b'\n' } else { c };
-            axhal::console::putchar(c);
-            ubuf[index] = c;
-            index += 1;
-            if c == b'\n' {
-                break;
-            }
-        } else {
-            task::yield_now();
-        }
-    }
-    index
 }
 
 #[derive(Debug)]
@@ -211,6 +184,7 @@ pub struct iovec {
 }
 
 pub fn writev(fd: usize, iov_array: &[iovec]) -> usize {
+    error!("No implementation of writev!");
     assert!(fd == 1 || fd == 2);
     for iov in iov_array {
         debug!("iov: {:#X} {:#X}", iov.iov_base, iov.iov_len);
@@ -544,6 +518,27 @@ pub fn getdents64(fd: usize, dirp: usize, count: usize) -> usize {
     };
     ubuf.copy_from_slice(&kbuf);
     ret
+}
+
+// Open /dev/console, for stdin/stdout/stderr, this should never fail
+pub fn console_on_rootfs() -> LinuxResult {
+    let mut opts = OpenOptions::new();
+    opts.read(true);
+    opts.write(true);
+
+    let current = task::current();
+    let fs = current.fs.lock();
+    let console = File::open("/dev/console", &opts, &fs)
+        .expect("bad /dev/console");
+    let console = Arc::new(Mutex::new(console));
+
+    let stdin = current.filetable.lock().insert(console.clone());
+    info!("Register stdin: fd[{}]", stdin);
+    let stdout = current.filetable.lock().insert(console.clone());
+    info!("Register stdout: fd[{}]", stdout);
+    let stderr = current.filetable.lock().insert(console.clone());
+    info!("Register stderr: fd[{}]", stderr);
+    Ok(())
 }
 
 pub fn init(cpu_id: usize, dtb_pa: usize) {

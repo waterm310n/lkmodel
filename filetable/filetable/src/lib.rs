@@ -8,7 +8,7 @@ use mutex::Mutex;
 use spinpreempt::SpinLock;
 
 pub struct FileTable {
-    pub table: SlotVec<FileTableEntry>,
+    table: SlotVec<FileTableEntry>,
 }
 
 impl FileTable {
@@ -46,6 +46,10 @@ impl FileTable {
         self.table.slots.len()
     }
 
+    pub fn copy_from(&mut self, src: &Self) {
+        self.table.copy_from(&src.table)
+    }
+
     pub fn reserve(&mut self, size: usize, num_occupied: usize) {
         self.table.num_occupied = num_occupied;
         self.table.reserve(size)
@@ -70,7 +74,7 @@ pub struct SlotVec<T: Clone> {
     slots: Vec<Option<T>>,
     // The number of occupied slots.
     // The i-th slot is occupied if `self.slots[i].is_some()`.
-    pub num_occupied: usize,
+    num_occupied: usize,
 }
 
 impl<T: Clone> SlotVec<T> {
@@ -80,6 +84,11 @@ impl<T: Clone> SlotVec<T> {
             slots: Vec::new(),
             num_occupied: 0,
         }
+    }
+
+    pub fn copy_from(&mut self, src: &Self) {
+        self.slots = src.slots.clone();
+        self.num_occupied = src.num_occupied;
     }
 
     pub fn reserve(&mut self, size: usize) {
