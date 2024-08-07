@@ -231,7 +231,7 @@ fn test_one(name: &str) -> Result<bool> {
     let arg = RootArgs { root: Some(name.to_owned()) };
     chroot(&arg)?;
     prepare()?;
-    let arg = RunArgs { process: None };
+    let arg = RunArgs { process: Some(String::from("/btp/sbin/hello")) };
     run(&arg, true)?;
     verify(name)
 }

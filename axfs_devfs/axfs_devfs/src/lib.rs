@@ -9,6 +9,7 @@ extern crate alloc;
 mod dir;
 mod null;
 mod zero;
+mod console;
 
 #[cfg(test)]
 mod tests;
@@ -16,6 +17,7 @@ mod tests;
 pub use self::dir::DirNode;
 pub use self::null::NullDev;
 pub use self::zero::ZeroDev;
+pub use self::console::ConsoleDev;
 
 use alloc::sync::Arc;
 use axfs_vfs::{VfsNodeRef, VfsOps, VfsResult};
