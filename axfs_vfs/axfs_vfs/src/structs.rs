@@ -65,6 +65,20 @@ pub enum VfsNodeType {
     Socket = 0o14,
 }
 
+pub enum DT_ {
+    #[allow(dead_code)]
+    UNKNOWN = 0,
+    FIFO = 1,
+    CHR = 2,
+    DIR = 4,
+    BLK = 6,
+    REG = 8,
+    LNK = 10,
+    SOCK = 12,
+    #[allow(dead_code)]
+    WHT = 14,
+}
+
 /// Directory entry.
 pub struct VfsDirEntry {
     d_type: VfsNodeType,
@@ -302,4 +316,13 @@ impl VfsDirEntry {
             .unwrap_or(self.d_name.len());
         &self.d_name[..len]
     }
+}
+
+#[repr(C, packed)]
+pub struct LinuxDirent64 {
+    pub d_ino:      u64,    // 64-bit inode number
+    pub d_off:      i64,    // 64-bit offset to next structure
+    pub d_reclen:   u16,    // Size of this dirent
+    pub d_type:     u8,     // File type
+    pub d_name:     [u8; 0],// Filename (null-terminated)
 }

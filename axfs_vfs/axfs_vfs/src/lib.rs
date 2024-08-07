@@ -48,7 +48,7 @@ pub mod path;
 use alloc::{sync::Arc, vec::Vec};
 use axerrno::{ax_err, AxError, AxResult};
 
-pub use self::structs::{FileSystemInfo, VfsDirEntry, VfsNodeAttr, VfsNodePerm, VfsNodeType};
+pub use self::structs::{FileSystemInfo, VfsDirEntry, VfsNodeAttr, VfsNodePerm, VfsNodeType, DT_, LinuxDirent64};
 
 pub type FileType = VfsNodeType;
 

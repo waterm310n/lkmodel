@@ -517,6 +517,7 @@ pub fn getdents64(fd: usize, dirp: usize, count: usize) -> usize {
         core::slice::from_raw_parts_mut(dirp as *mut _, count)
     };
     ubuf.copy_from_slice(&kbuf);
+    info!("getdents64 ret {}...", ret);
     ret
 }
 
