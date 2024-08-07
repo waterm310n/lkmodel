@@ -134,7 +134,7 @@ impl KernelCloneArgs {
 
         let mut task = current().dup_task_struct();
 
-        //copy_files();
+        self.copy_files(&mut task)?;
         self.copy_fs(&mut task)?;
         self.copy_sighand(&mut task)?;
         //copy_signal();
@@ -149,6 +149,25 @@ impl KernelCloneArgs {
         task::register_task(arc_task.clone());
         info!("copy_process tid: {} -> {}", current().tid(), arc_task.tid());
         Ok(arc_task)
+    }
+
+    fn copy_files(&self, task: &mut TaskStruct) -> LinuxResult {
+        if self.flags.contains(CloneFlags::CLONE_FILES) {
+            task.filetable = task::current().filetable.clone();
+            Ok(())
+        } else {
+            let current = task::current();
+            let src_files = current.filetable.lock();
+            task.filetable.lock().reserve(src_files.slots_len(), src_files.table.num_occupied);
+            for i in 0..src_files.slots_len() {
+                let f = src_files.get_file(i);
+                if let Some(item) = f {
+                    task.filetable.lock().fd_install(i, item.clone());
+                }
+            }
+            info!("copy_files COPY! slots {}", src_files.slots_len());
+            Ok(())
+        }
     }
 
     fn copy_sighand(&self, task: &mut TaskStruct) -> LinuxResult {

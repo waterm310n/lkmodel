@@ -8,7 +8,7 @@ use mutex::Mutex;
 use spinpreempt::SpinLock;
 
 pub struct FileTable {
-    table: SlotVec<FileTableEntry>,
+    pub table: SlotVec<FileTableEntry>,
 }
 
 impl FileTable {
@@ -20,17 +20,17 @@ impl FileTable {
 
     pub fn get_file(&self, fd: usize) -> Option<Arc<Mutex<File>>> {
         self.table
-            .get(fd-3)
+            .get(fd)
             .map(|entry| entry.file.clone())
     }
 
     pub fn insert(&mut self, item: Arc<Mutex<File>>) -> usize {
         let entry = FileTableEntry::new(item);
-        self.table.put(entry) + 3
+        self.table.put(entry)
     }
 
     pub fn remove(&mut self, fd: usize) {
-        self.table.remove(fd-3);
+        self.table.remove(fd);
     }
 
     pub fn alloc_fd(&mut self, start: usize) -> usize {
@@ -41,8 +41,18 @@ impl FileTable {
         let entry = FileTableEntry::new(file.clone());
         self.table.install(pos, entry)
     }
+
+    pub fn slots_len(&self) -> usize {
+        self.table.slots.len()
+    }
+
+    pub fn reserve(&mut self, size: usize, num_occupied: usize) {
+        self.table.num_occupied = num_occupied;
+        self.table.reserve(size)
+    }
 }
 
+#[derive(Clone)]
 pub struct FileTableEntry {
     file: Arc<Mutex<File>>,
 }
@@ -55,15 +65,15 @@ impl FileTableEntry {
     }
 }
 
-pub struct SlotVec<T> {
+pub struct SlotVec<T: Clone> {
     // The slots to store items.
     slots: Vec<Option<T>>,
     // The number of occupied slots.
     // The i-th slot is occupied if `self.slots[i].is_some()`.
-    num_occupied: usize,
+    pub num_occupied: usize,
 }
 
-impl<T> SlotVec<T> {
+impl<T: Clone> SlotVec<T> {
     /// New an empty vector.
     pub const fn new() -> Self {
         Self {
@@ -71,6 +81,17 @@ impl<T> SlotVec<T> {
             num_occupied: 0,
         }
     }
+
+    pub fn reserve(&mut self, size: usize) {
+        self.slots.resize(size, None)
+    }
+
+    /// Return the number of slots.
+    pub fn slots_len(&self) -> usize {
+        self.slots.len()
+    }
+
+    /// Get slot at index.
     pub fn get(&self, idx: usize) -> Option<&T> {
         if idx >= self.slots.len() {
             return None;

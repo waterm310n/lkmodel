@@ -8,12 +8,16 @@ extern crate alloc;
 
 use alloc::{vec, vec::Vec};
 use alloc::string::String;
+use alloc::sync::Arc;
+use mutex::Mutex;
 
 use axerrno::{LinuxError, LinuxResult};
 #[cfg(target_arch = "riscv64")]
 use axhal::mem::phys_to_virt;
 use axtype::DtbInfo;
 use fork::{user_mode_thread, CloneFlags};
+use axfile::fops::File;
+use axfile::fops::OpenOptions;
 
 pub fn init(cpu_id: usize, dtb_pa: usize) {
     axconfig::init_once!();
@@ -110,6 +114,9 @@ fn cpu_startup_entry() {
 
 /// Prepare for entering first user app.
 fn kernel_init(dtb_info: DtbInfo) {
+
+    let _ = kernel_init_freeable();
+
     /*
      * We try each of these until one succeeds.
      *
@@ -152,4 +159,29 @@ fn run_init_process(init_filename: &str) -> LinuxResult {
     let envp_init: Vec<String> = vec!["HOME=/".into(), "TERM=linux".into()];
 
     exec::kernel_execve(init_filename, argv_init, envp_init)
+}
+
+fn kernel_init_freeable() -> LinuxResult {
+    console_on_rootfs()
+}
+
+// Open /dev/console, for stdin/stdout/stderr, this should never fail
+fn console_on_rootfs() -> LinuxResult {
+    let mut opts = OpenOptions::new();
+    opts.read(true);
+    opts.write(true);
+
+    let current = task::current();
+    let fs = current.fs.lock();
+    let console = File::open("/dev/console", &opts, &fs)
+        .expect("bad /dev/console");
+    let console = Arc::new(Mutex::new(console));
+
+    let stdin = current.filetable.lock().insert(console.clone());
+    error!("Register stdin: fd[{}]", stdin);
+    let stdout = current.filetable.lock().insert(console.clone());
+    error!("Register stdout: fd[{}]", stdout);
+    let stderr = current.filetable.lock().insert(console.clone());
+    error!("Register stderr: fd[{}]", stderr);
+    Ok(())
 }
