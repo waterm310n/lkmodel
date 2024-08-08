@@ -75,6 +75,8 @@ pub fn do_syscall(args: SyscallArgs, sysno: usize) -> usize {
         LINUX_SYSCALL_MOUNT => linux_syscall_mount(args),
         #[cfg(target_arch = "riscv64")]
         LINUX_SYSCALL_GETDENTS64 => linux_syscall_getdents64(args),
+        #[cfg(target_arch = "riscv64")]
+        LINUX_SYSCALL_STATFS64 => linux_syscall_statfs64(args),
         #[cfg(target_arch = "x86_64")]
         LINUX_SYSCALL_ACCESS => linux_syscall_access(args),
         #[cfg(target_arch = "x86_64")]
@@ -470,6 +472,11 @@ fn linux_syscall_vfork(_args: SyscallArgs) -> usize {
 
 fn linux_syscall_mount(_args: SyscallArgs) -> usize {
     // TODO: implement mount syscall
+    0
+}
+
+#[cfg(target_arch = "riscv64")]
+fn linux_syscall_statfs64(args: SyscallArgs) -> usize {
     0
 }
 
