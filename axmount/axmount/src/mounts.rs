@@ -7,11 +7,13 @@ use crate::fs;
 pub(crate) fn devfs() -> Arc<fs::devfs::DeviceFileSystem> {
     let null = fs::devfs::NullDev;
     let zero = fs::devfs::ZeroDev;
+    let console = fs::devfs::ConsoleDev;
     let bar = fs::devfs::ZeroDev;
     let devfs = fs::devfs::DeviceFileSystem::new();
     let foo_dir = devfs.mkdir("foo");
     devfs.add("null", Arc::new(null));
     devfs.add("zero", Arc::new(zero));
+    devfs.add("console", Arc::new(console));
     foo_dir.add("bar", Arc::new(bar));
     devfs.mkdir("shm");
     Arc::new(devfs)

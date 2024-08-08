@@ -4,3 +4,4 @@ mmap
 mount
 signal
 vfork
+devfs

@@ -1,9 +1,12 @@
+use core::mem;
+use core::mem::transmute;
+use core::ptr::copy_nonoverlapping;
 use alloc::collections::BTreeMap;
 use alloc::sync::{Arc, Weak};
 use alloc::{string::String, vec::Vec};
 
 use axfs_vfs::{VfsDirEntry, VfsNodeAttr, VfsNodeOps, VfsNodeRef, VfsNodeType};
-use axfs_vfs::{VfsError, VfsResult};
+use axfs_vfs::{VfsError, VfsResult, DT_, LinuxDirent64};
 use spin::RwLock;
 
 use crate::file::FileNode;
@@ -165,8 +168,69 @@ impl VfsNodeOps for DirNode {
         }
     }
 
-    fn read_at(&self, _offset: u64, _buf: &mut [u8]) -> VfsResult<usize> {
-        // Todo: implement it with read_dir
+    fn read_at(&self, offset: u64, buf: &mut [u8]) -> VfsResult<usize> {
+        if offset != 0 {
+            log::error!("NOTICE! todo: check offset[{}] and real length of directory!", offset);
+            return Ok(0);
+        }
+
+        static mut INO_SEQ: u64 = 0;
+
+        let children = self.children.read();
+        let mut children = children.iter().skip((offset.max(2) - 2) as usize);
+
+        let mut count = 0;
+        for i in offset.. {
+            let (mut name, ty) = match i + offset {
+                0 => (String::from("."), DT_::DIR as u8),
+                1 => (String::from(".."), DT_::DIR as u8),
+                _ => {
+                    if let Some((name, node)) = children.next() {
+                        let ty = match node.get_attr().unwrap().file_type() {
+                            VfsNodeType::File => DT_::REG as u8,
+                            VfsNodeType::Dir => DT_::DIR as u8,
+                            VfsNodeType::CharDevice => DT_::CHR as u8,
+                            VfsNodeType::BlockDevice => DT_::BLK as u8,
+                            VfsNodeType::Fifo => DT_::FIFO as u8,
+                            VfsNodeType::Socket => DT_::SOCK as u8,
+                            VfsNodeType::SymLink => DT_::LNK as u8,
+                        };
+                        (name.clone(), ty)
+                    } else {
+                        return Ok(count as usize);
+                    }
+                }
+            };
+            name.push('\0');
+            let name_len = name.len();
+            log::info!("[{}] name:{:?} [{}] {}", i, name.as_bytes(), name_len, name.len());
+
+            let entry_size = mem::size_of::<LinuxDirent64>() + name_len;
+            log::info!("entry_size : {}", entry_size);
+
+            if count + entry_size > buf.len() {
+                log::error!("buf for dirents overflow!");
+                return Ok(count as usize);
+            }
+
+            let dirent: &mut LinuxDirent64 = unsafe {
+                transmute(buf.as_mut_ptr().offset(count as isize))
+            };
+            dirent.d_ino = unsafe { INO_SEQ += 1; INO_SEQ };
+            dirent.d_off = (count + entry_size) as i64;
+            dirent.d_reclen = entry_size as u16;
+            dirent.d_type = ty;
+
+            unsafe {
+                copy_nonoverlapping(
+                    name.as_ptr(),
+                    dirent.d_name.as_mut_ptr(),
+                    name_len
+                )
+            };
+
+            count += entry_size;
+        }
         Ok(0)
     }
 

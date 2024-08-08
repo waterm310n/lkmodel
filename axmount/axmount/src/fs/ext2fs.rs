@@ -35,6 +35,7 @@ use body::directory_entry::DirectoryEntryType::{
     RegularFile, Directory,
     CharacterDevice, BlockDevice, Fifo, Socket, SymbolicLink
 };
+use axfs_vfs::{DT_, LinuxDirent64};
 
 pub use body::{DirectoryEntry, DirectoryEntryType, Entry, Inode, TypePerm};
 
@@ -44,29 +45,6 @@ pub use tools::div_rounded_up;
 const EXT2_SIGNATURE_MAGIC: u16 = 0xef53;
 
 static EXT2_FS: LazyInit<Arc<Ext2Fs>> = LazyInit::new();
-
-enum DT_ {
-    #[allow(dead_code)]
-    UNKNOWN = 0,
-    FIFO = 1,
-    CHR = 2,
-    DIR = 4,
-    BLK = 6,
-    REG = 8,
-    LNK = 10,
-    SOCK = 12,
-    #[allow(dead_code)]
-    WHT = 14,
-}
-
-#[repr(C, packed)]
-struct LinuxDirent64 {
-    d_ino:      u64,    // 64-bit inode number
-    d_off:      i64,    // 64-bit offset to next structure
-    d_reclen:   u16,    // Size of this dirent
-    d_type:     u8,     // File type
-    d_name:     [u8; 0],// Filename (null-terminated)
-}
 
 pub struct Ext2Fs {
     inner: Mutex<Ext2Filesystem>,
@@ -201,7 +179,7 @@ impl Ext2Filesystem {
             let name_len = name.len();
             info!("[{}] name:{:?} [{}] {}", i, name.as_bytes(), name_len, name.len());
 
-            let entry_size = mem::size_of::<LinuxDirent64>() + name_len ;
+            let entry_size = mem::size_of::<LinuxDirent64>() + name_len;
             info!("entry_size : {}", entry_size);
 
             if count + entry_size > buf.len() {
@@ -227,7 +205,6 @@ impl Ext2Filesystem {
 
             unsafe {
                 copy_nonoverlapping(
-                    //entry.directory.filename.0.as_ptr(),
                     name.as_ptr(),
                     dirent.d_name.as_mut_ptr(),
                     name_len

@@ -110,6 +110,8 @@ fn cpu_startup_entry() {
 
 /// Prepare for entering first user app.
 fn kernel_init(dtb_info: DtbInfo) {
+    let _ = kernel_init_freeable();
+
     /*
      * We try each of these until one succeeds.
      *
@@ -152,4 +154,8 @@ fn run_init_process(init_filename: &str) -> LinuxResult {
     let envp_init: Vec<String> = vec!["HOME=/".into(), "TERM=linux".into()];
 
     exec::kernel_execve(init_filename, argv_init, envp_init)
+}
+
+fn kernel_init_freeable() -> LinuxResult {
+    fileops::console_on_rootfs()
 }

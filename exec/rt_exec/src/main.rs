@@ -26,8 +26,14 @@ pub fn init(cpu_id: usize, dtb: usize) {
 }
 
 pub fn start(_cpu_id: usize, _dtb: usize) {
-    let filename = "/sbin/init";
-    let _ = exec::kernel_execve(filename, vec![filename.to_owned()], vec![]);
+    let init_cmd = env!("AX_INIT_CMD");
+    if init_cmd.len() == 0 {
+        panic!("No init_cmd!");
+    }
+
+    let _ = fileops::console_on_rootfs();
+
+    let _ = exec::kernel_execve(init_cmd, vec![init_cmd.to_owned()], vec![]);
 
     let sp = task::current().pt_regs_addr();
     axhal::arch::ret_from_fork(sp);
