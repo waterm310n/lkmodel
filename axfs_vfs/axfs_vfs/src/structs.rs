@@ -30,7 +30,7 @@ pub struct FileSystemInfo {
 
 #[derive(Default, Debug, Clone, Copy)]
 pub struct KernelFsid {
-    val: [i32; 2],
+    _val: [i32; 2],
 }
 
 /// Node (file/directory) attributes.

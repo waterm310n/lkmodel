@@ -6,7 +6,7 @@ use axtype::get_user_str;
 use fileops::iovec;
 use axtype::{align_up_4k, is_aligned_4k};
 use axhal::arch::sysno::*;
-use axerrno::{linux_err_from, LinuxError};
+use axerrno::{linux_err, linux_err_from, LinuxError};
 
 #[macro_use]
 extern crate log;
@@ -181,7 +181,15 @@ fn linux_syscall_lseek(args: SyscallArgs) -> usize {
 
 fn linux_syscall_read(args: SyscallArgs) -> usize {
     let [fd, buf, count, ..] = args;
-
+    let mm = task::current().mm();
+    let locked_mm = mm.lock();
+    let ret = locked_mm.vmas.iter().any(|(_,vma)| {
+        // error!("vma start {:x};vma end {:x}",vma.vm_start,vma.vm_end);
+        vma.vm_start <= buf && buf <= vma.vm_end && vma.vm_flags & mm::VM_WRITE != 0
+    });
+    if !ret {
+        return linux_err!(EFAULT);
+    }
     let ubuf = unsafe { core::slice::from_raw_parts_mut(buf as *mut u8, count) };
     fileops::read(fd, ubuf)
 }
@@ -470,14 +478,27 @@ fn linux_syscall_vfork(_args: SyscallArgs) -> usize {
     fork::sys_vfork()
 }
 
-fn linux_syscall_mount(_args: SyscallArgs) -> usize {
+fn linux_syscall_mount(args: SyscallArgs) -> usize {
     // TODO: implement mount syscall
+    let [source, target, file_system_type, mount_flags, data, ..] = args;
+    // let source = get_user_str(source);
+    // let target = get_user_str(target);
     0
 }
 
-#[cfg(target_arch = "riscv64")]
 fn linux_syscall_statfs64(args: SyscallArgs) -> usize {
-    0
+    let [path, buf, ..] = args;
+
+    let path = get_user_str(path);
+
+    let current = task::current();
+    let mut fs = current.fs.lock();
+    let path = match fs.absolute_path(&path){
+        Ok(abs_path) => abs_path,
+        Err(_) => unreachable!(), // absolute_path always return Ok for now
+    };
+
+    axmount::sys_statfs64(&path, buf)
 }
 
 pub fn init() {

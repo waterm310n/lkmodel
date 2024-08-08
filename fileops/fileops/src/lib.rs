@@ -122,28 +122,30 @@ pub fn read(fd: usize, ubuf: &mut [u8]) -> usize {
 
     let count = ubuf.len();
     let current = task::current();
-    let file = current.filetable.lock().get_file(fd).unwrap();
 
-    let mut kbuf = vec![0u8; count];
-    /*
-    let mut pos = 0;
-    while pos < count {
-        let ret = file.lock().read(&mut kbuf[pos..]).unwrap();
-        if ret == 0 {
-            break;
+    let res = if let Some(file) = current.filetable.lock().get_file(fd) {
+        let mut kbuf = vec![0u8; count];
+        let mut locked_file = file.lock();
+
+        if let Ok(attr) = locked_file.get_attr() {
+            if attr.is_dir() {
+                return linux_err!(EISDIR);
+            }
         }
-        pos += ret;
-    }
-    */
-    let pos = file.lock().read(&mut kbuf).unwrap();
+        let pos = locked_file.read(&mut kbuf).unwrap();
+    
+        info!(
+            "linux_syscall_read: fd {}, count {}, ret {}",
+            fd, count, pos
+        );
+    
+        ubuf.copy_from_slice(&kbuf);
+        pos
+    }else{
+        linux_err!(EBADF)
+    };
 
-    info!(
-        "linux_syscall_read: fd {}, count {}, ret {}",
-        fd, count, pos
-    );
-
-    ubuf.copy_from_slice(&kbuf);
-    pos
+    res
 }
 
 pub fn pread64(fd: usize, ubuf: &mut [u8], offset: usize) -> usize {

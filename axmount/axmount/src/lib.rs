@@ -10,7 +10,6 @@ mod dev;
 mod fs;
 mod mounts;
 
-use alloc::string::String;
 use axdriver::{prelude::*, AxDeviceContainer};
 use alloc::sync::Arc;
 use lazy_init::LazyInit;
@@ -113,7 +112,7 @@ pub fn sys_statfs64(path: &str, buf: usize) -> usize {
                 *statfs_buf = fs_info;
                 0
             },
-            Some(Err(err)) => {
+            Some(Err(_err)) => {
                 usize::MAX
             },
             None => usize::MAX,
