@@ -3,7 +3,7 @@
 extern crate alloc;
 
 use axtype::get_user_str;
-use fileops::iovec;
+use fileops::{iovec, mknodat};
 use axtype::{align_up_4k, is_aligned_4k};
 use axhal::arch::sysno::*;
 use axerrno::{linux_err, linux_err_from, LinuxError};
@@ -77,6 +77,7 @@ pub fn do_syscall(args: SyscallArgs, sysno: usize) -> usize {
         LINUX_SYSCALL_GETDENTS64 => linux_syscall_getdents64(args),
         #[cfg(target_arch = "riscv64")]
         LINUX_SYSCALL_STATFS64 => linux_syscall_statfs64(args),
+        LINUX_SYSCALL_MKNODAT => linux_syscall_mknodat(args),
         #[cfg(target_arch = "x86_64")]
         LINUX_SYSCALL_ACCESS => linux_syscall_access(args),
         #[cfg(target_arch = "x86_64")]
@@ -480,7 +481,7 @@ fn linux_syscall_vfork(_args: SyscallArgs) -> usize {
 
 fn linux_syscall_mount(args: SyscallArgs) -> usize {
     // TODO: implement mount syscall
-    let [source, target, file_system_type, mount_flags, data, ..] = args;
+    let [_source, _target, _file_system_type, _mount_flags, _data, ..] = args;
     // let source = get_user_str(source);
     // let target = get_user_str(target);
     0
@@ -492,7 +493,7 @@ fn linux_syscall_statfs64(args: SyscallArgs) -> usize {
     let path = get_user_str(path);
 
     let current = task::current();
-    let mut fs = current.fs.lock();
+    let fs = current.fs.lock();
     let path = match fs.absolute_path(&path){
         Ok(abs_path) => abs_path,
         Err(_) => unreachable!(), // absolute_path always return Ok for now
@@ -501,6 +502,13 @@ fn linux_syscall_statfs64(args: SyscallArgs) -> usize {
     axmount::sys_statfs64(&path, buf)
 }
 
+fn linux_syscall_mknodat(args: SyscallArgs) -> usize {
+    let [dfd, pathname, mode, dev, ..] = args;
+
+    let pathname = get_user_str(pathname);
+
+    mknodat(dfd, &pathname, mode, dev)
+}
 pub fn init() {
     info!("Initialize systemcalls ...");
 }

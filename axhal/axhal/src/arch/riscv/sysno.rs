@@ -63,4 +63,4 @@ pub const LINUX_SYSCALL_RT_SIGACTION: usize = 0x86;
 pub const LINUX_SYSCALL_RT_SIGPROCMASK: usize = 0x87;
 
 pub const LINUX_SYSCALL_MOUNT: usize = 0x28;
-
+pub const LINUX_SYSCALL_MKNODAT: usize = 0x21;

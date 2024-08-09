@@ -130,6 +130,13 @@ impl VfsNodePerm {
         Self::from_bits_truncate(0o755)
     }
 
+    /// Returns the default permission for a fifo.
+    ///
+    /// The default permission is `0o777` (owner/group/others can read and write).
+    pub const fn default_fifo() -> Self {
+        Self::from_bits_truncate(0o777)
+    }
+
     /// Returns the underlying raw `st_mode` bits that contain the standard
     /// Unix permissions for this file.
     pub const fn mode(&self) -> u32 {
@@ -272,6 +279,17 @@ impl VfsNodeAttr {
         }
     }
 
+    /// Creates a new `VfsNodeAttr` for a fifo, with the default directory
+    /// permission.
+    pub const fn new_fifo(size: u64, blocks: u64) -> Self {
+        Self {
+            mode: VfsNodePerm::default_fifo(),
+            ty: VfsNodeType::Fifo,
+            size,
+            blocks,
+        }
+    }
+
     /// Returns the size of the node.
     pub const fn size(&self) -> u64 {
         self.size
@@ -305,6 +323,11 @@ impl VfsNodeAttr {
     /// Whether the node is a directory.
     pub const fn is_dir(&self) -> bool {
         self.ty.is_dir()
+    }
+
+    /// Whether the node is a fifo.
+    pub const fn is_fifo(&self) -> bool {
+        self.ty.is_fifo()
     }
 }
 
